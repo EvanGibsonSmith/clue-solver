@@ -24,6 +24,14 @@ public class Node<T> {
         return this.children;
     }
 
+    public int numChildren() {
+        return childIndex;
+    }
+
+    public boolean hasChildren() {
+        return (childIndex!=0);
+    }
+
     public int addChild(Node<T> newChild) {
         if (childIndex<children.length) {
             children[childIndex] = newChild;
@@ -33,6 +41,7 @@ public class Node<T> {
         return -1;  // return negative 1 if new child couldn't be added
     }
 
+    @Override
     public String toString() {
         String out = "";
         for (Node<T> child: children) {

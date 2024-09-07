@@ -7,9 +7,31 @@ import java.util.Stack;
 
 public class NodeTree<T> {
     Node<T> head;
+    ArrayList<Node<T>> leaves;
 
+    // TODO document
     public NodeTree(Node<T> head) {
         this.head = head;
+        leaves = new ArrayList<Node<T>>(); // TODO not used right now, could save time on getting leaves by storing within structure rather that recalculating each time
+        leaves.add(head);
+    }
+
+    public Node<T>[] getLeaves() { // TODO make not recalculate everytime, but update leaves field when tree is grown?
+        Queue<Node<T>> todoQueue = new LinkedList<>();
+        todoQueue.add(head);
+        ArrayList<Node<T>> out = new ArrayList<>();
+        while (!todoQueue.isEmpty()) { // traverse and add node when removed from todo
+            Node<T> next = todoQueue.poll();
+            for (Node<T> child: next.getChildren()) {
+                if (child!=null) {
+                    todoQueue.add(child);
+                }
+            }
+            if (!next.hasChildren()) { // if no chlid added, then leaf
+                out.add(next);
+            }
+        }
+        return out.toArray(new Node[0]);
     }
 
     // TODO document
