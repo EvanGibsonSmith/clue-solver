@@ -7,15 +7,18 @@ import java.util.HashSet;
 // Game can also theoretically have this information if we keep track of a player, but does it make more sense to have it in Player?
 public class CluePlayer {
     ClueHand hand; 
+    int maxHandSize;
     String name;
 
     public CluePlayer(String name, int handSize) {
         hand = new ClueHand(handSize);
+        this.maxHandSize = handSize;
         this.name = name;
     }
 
     public CluePlayer(int handSize) {
         hand = new ClueHand(handSize);
+        this.maxHandSize = handSize;
         name = "Player";
     }
 
@@ -26,6 +29,10 @@ public class CluePlayer {
 
     public ClueHand getHand() {
         return hand;
+    }
+
+    public int getMaxHandSize() {
+        return maxHandSize;
     }
 
     public ClueGuess makeGuess() {

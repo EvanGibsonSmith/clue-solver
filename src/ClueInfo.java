@@ -5,6 +5,8 @@ public class ClueInfo {
     ClueCard card;
     boolean hasCard = true; // if true, info reveals that player HAS this card, if false, reveals player does NOT have this card
 
+    // TODO: add checks for what is a valid clue info (in combinations of guessingPlayer, hasCard, etc.) so SolverTree doesn't need to handle it
+    // TODO: make a function type() that calculates which of the three cases this piece of info falls under (again, so SolverTree has less to do)
     public ClueInfo(CluePlayer guessingPlayer, ClueGuess guess, CluePlayer revealingPlayer, ClueCard card) {
         this.guessingPlayer = guessingPlayer;
         this.revealingPlayer = revealingPlayer;
@@ -50,6 +52,14 @@ public class ClueInfo {
         return new ClueInfo(guessingPlayer, guess, revealingPlayer, newCard, hasCard);
     }
 
+    public ClueInfo copyWithNewRevealingPlayer(CluePlayer newRevealingPlayer) {
+        return new ClueInfo(guessingPlayer, guess, newRevealingPlayer, card, hasCard);
+    }
+
+    public ClueInfo copyWithOppositeHasCard() {
+        return new ClueInfo(guessingPlayer, guess, revealingPlayer, card, !hasCard);
+    }
+
     public CluePlayer guessingPlayer() {
         return guessingPlayer;
     }
@@ -64,5 +74,9 @@ public class ClueInfo {
 
     public ClueCard card() {
         return card;
+    }
+
+    public boolean hasCard() {
+        return hasCard;
     }
 }
