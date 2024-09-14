@@ -1,3 +1,5 @@
+package main;
+
 import java.util.Set;
 import java.util.HashSet;
 
@@ -29,6 +31,19 @@ public class ClueGuess {
     @Override 
     public String toString() {
         return player.toString() + ", " + room.toString() + ", " + weapon.toString();
+    }
+
+    @Override 
+    public boolean equals(Object other) {
+        if (other.getClass()!=this.getClass()) {
+            return false;
+        }
+        return ((ClueGuess) other).cardSet.equals(this.cardSet);
+    }
+
+    @Override 
+    public int hashCode() {
+        return this.cardSet.hashCode();
     }
 
     private void populateCardSet() {

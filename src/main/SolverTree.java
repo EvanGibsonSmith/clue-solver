@@ -1,3 +1,5 @@
+package main;
+
 import data_structures.Node;
 import data_structures.NodeTree;
 import java.util.HashSet;
@@ -88,6 +90,7 @@ public class SolverTree {
             } 
             // in this case, add a single child representing this new information to each leaf (same info object is ok since they aren't modified) 
             bottom.addChild(new Node<ClueInfo>(info, 3));
+            bottom = bottom.getChildren()[0];
         }
         else if (info.guessingPlayer()!=player && info.hasCard()) {
             growRevealedInfo(info);
@@ -152,7 +155,7 @@ public class SolverTree {
     private Set<ClueInfo> knownCardInformation() {
         Node<ClueInfo> node = tree.getHead();
         HashSet<ClueInfo> knownInfo = new HashSet<>();
-        knownInfo.add(node.getValue()); // add head node, since it has no parents
+        // don't add head since value is null
         while (node.hasChildren()) {
             if (node.numChildren()==1 & node.getChildren()[0].getValue()!=null) { // add info if only one non null child
                 knownInfo.add(node.getChildren()[0].getValue()); // add ONLY child to knownInfo since it has no siblings
@@ -199,42 +202,76 @@ public class SolverTree {
     /*
      * TODO document
      */
-    public Map<CluePlayer, Integer> numKnownPlayerCards(Set<ClueInfo> knownInfoSet) {
-        Map<CluePlayer, Integer> numKnownCardsPlayer = new HashMap<>();
-        for (ClueInfo node: knownInfoSet) {
-            CluePlayer revPlayer = node.revealingPlayer();
-            if (!numKnownCardsPlayer.containsKey(revPlayer)) { // if player not seen, set to 0 cards
-                numKnownCardsPlayer.put(revPlayer, 0);
+    public Map<CluePlayer, ClueHand> playerCards(Set<ClueInfo> knownInfoSet) {
+        Map<CluePlayer, ClueHand> playerCards = new HashMap<>(); // known cards for each player
+        for (ClueInfo info: knownInfoSet) {
+            CluePlayer revPlayer = info.revealingPlayer();
+            if (!playerCards.containsKey(revPlayer)) { // if player not seen, make new empty hand
+                playerCards.put(revPlayer, new ClueHand(3)); // TODO make handsize work for actual value based on number of players
             }
             // add card to revealing player since it is known
-            numKnownCardsPlayer.put(revPlayer, numKnownCardsPlayer.get(revPlayer)+1);
+            if (info.hasCard()==true) { // add if card was actually shown
+                playerCards.get(revPlayer).addCard(info.card());
+            }
         }
-        return numKnownCardsPlayer;
+        return playerCards;
     }
 
     /*
-     * Removes the nodes passed in nodesSet from the tree by passing through tree.
+     * TODO delete?
+     */
+    /*
+    public Map<CluePlayer, Integer> numPlayerCards(Map<CluePlayer, ClueHand> playerCards) {
+        Map<CluePlayer, Integer> handSizes = new HashMap<>();
+        for (CluePlayer player: playerCards.keySet()) {
+            handSizes.put(player, playerCards.get(player).size());
+        }
+        return handSizes;
+    }*/
+
+    /*
+     * Removes the nodes passed in nodesSet from the tree by walking through tree.
+     * Nodes set should only contain unknown nodes on multi child layers of the tree
      */
     private void removeNodes(Set<Node<ClueInfo>> nodesSet) {
         // TODO complete me
+        Node<ClueInfo> node = tree.getHead();
+        while (node!=null && node.hasChildren()) { // node can equal null if only child removed TODO check this
+            for (int childIdx=0; childIdx<node.numChildren(); ++childIdx) { // check if any children are violating
+                Node<ClueInfo> child = node.getChildren()[childIdx];
+                if (nodesSet.contains(child)) {
+                    // remove node
+                    node.removeChild(childIdx);
+                    child.clearChildren(); // not sure if technically needed, but disconnecting child completly remove it from tree
+                }
+            }
+            node = node.getChildren()[0]; // only one parent node to multi child layers, so this works
+        }
     }
 
-    // TODO Could make a marginally better pruning algorithm that looks through tree and indentifies all possible 
-    // disqualifying nodes, and then searches tree once more for those disqualifying nodes
-    // (Also, since the order of information over time throughout the game isn't important, it may be better to store as a set, and maybe a bit faster)
     /*
-     * Finds and removes nodes with ClueInfo that would disqualify 
-     * unknown nodes with contradictory ClueInfo if present in tree, based on 3 pruning conditions:
-     *      1. An unknown node reveals the same card another player is known to have.
-     *      2. An unknown node asserts that a player has a card that a known node states they do not have.
-     *          NOTE: An unknown node cannot assert that a player does not have a card, since unknown nodes
-     *                occur when the tree branches, which only occurs when a card is revealed.
-     *      3. An unknown node, if a player had it, would cause them to have too many cards in hand including known nodes.
+     * Gets all of the players seen in the tree guessing.
      */
-    public void prune() {
+    private Set<CluePlayer> seenGuessingPlayers(Node<ClueInfo>[] nodes) {
+        Set<CluePlayer> out = new HashSet<>();
+        for (Node<ClueInfo> node: nodes) {
+            if (node.getValue()!=null) {
+                out.add(node.getValue().guessingPlayer());
+            }
+        }
+        return out;
+    }
+
+    /*
+     * Performs prune() once on the tree, see docstring of prune for details.
+     */
+    private boolean pruneOnce() {
         Node<ClueInfo>[] nodes = tree.getNodesBFS();
         Set<ClueInfo> knownNodesInfo = knownCardInformation();
-        Map<CluePlayer, Integer> playerCards = numKnownPlayerCards(knownNodesInfo);
+        Set<ClueInfoCardAndRevealed> cardRevealedInfo = ClueInfoCardAndRevealed.buildSet(knownNodesInfo); // used for type 1
+        Set<ClueInfoCardAndRevealingPlayer> revealingPlayerInfo = ClueInfoCardAndRevealingPlayer.buildSet(knownNodesInfo); // used for type 2
+
+        Map<CluePlayer, ClueHand> playerCards = playerCards(knownNodesInfo);
         Set<CluePlayer> seenPlayers = playerCards.keySet();
         Map<ClueInfo, Node<ClueInfo>> nodeMap = new HashMap<>();
 
@@ -245,25 +282,71 @@ public class SolverTree {
         }
 
         // prune on conditions
-        boolean anyNodeRemoved = false; // if any card has been 
-        for (Node<ClueInfo> node: nodes) {
+        for (Node<ClueInfo> node: nodes) { // TODO make prune only unknown nodes in the future
+            // filter out nodes that have value null, since they will not be removed. Skips known info
+            if (knownNodesInfo.contains(node.getValue()) || node.getValue()==null) { // TODO make iterate over known nodes instead?
+                continue;
+            }
             ClueInfo cInfo = node.getValue();
             // from 1., 2., and 3., in docstring
+
+            // TODO FIX THIS
+            // cond1
             boolean cond1 = false;
-            for (CluePlayer cp: seenPlayers) {
-                if (knownNodesInfo.contains(cInfo.copyWithNewRevealingPlayer(cp))) {
+            for (CluePlayer player: seenPlayers) {
+                if (player.equals(node.getValue().revealingPlayer())) { // if same player has card again, no contradiction
+                    continue;
+                }
+                ClueInfoCardAndRevealingPlayer newPlayerInfoCopy = new ClueInfoCardAndRevealingPlayer(player, cInfo.card(), cInfo.hasCard);
+                if (revealingPlayerInfo.contains(newPlayerInfoCopy)) { // TODO doesn't work, checking if same player for obth
                     cond1 = true;
                 }
             }
-
-            boolean cond2 = knownNodesInfo.contains(cInfo.copyWithOppositeHasCard());
-            boolean cond3 = (playerCards.get(cInfo.revealingPlayer()) + 1) > cInfo.revealingPlayer().getMaxHandSize();
+                
+            // cond 2
+            ClueInfoCardAndRevealingPlayer newRevealingPlayerInfo = new ClueInfoCardAndRevealingPlayer(cInfo);
+            newRevealingPlayerInfo.flipHasCard();
+            boolean cond2 = revealingPlayerInfo.contains(newRevealingPlayerInfo); // TODO doesn't work with different guessing players
+            
+            // cond 3
+            ClueHand revPlayerSeenCards = playerCards.get(cInfo.revealingPlayer());
+            if (revPlayerSeenCards==null) { // if player for this node has no known node, say hand size is 0
+                revPlayerSeenCards = new ClueHand(3); // TODO replace with proper size
+            }
+            boolean atMaxHandSize = revPlayerSeenCards.size()==revPlayerSeenCards.maxSize();
+            HashSet<ClueCard> seenCardsSet = new HashSet<>(Arrays.asList(revPlayerSeenCards.getHand())); // TODO this recomuptation is not very efficient
+            // cannot have any unknown cards if at max hand size (all player cards are known)
+            boolean cond3 = atMaxHandSize && !(seenCardsSet).contains(cInfo.card());
             if (cond1 | cond2 | cond3) { 
                 nodesToRemove.add(node);
             }
         }
 
-        removeNodes(nodesToRemove); 
+        if (nodesToRemove.isEmpty()) { // if empty, nothing more to prune
+            return false;
+        }
+        else {
+            removeNodes(nodesToRemove); 
+            return true;
+        }
+    }
+    
+    /*
+     * Finds and removes nodes with ClueInfo that would disqualify
+     * unknown nodes with contradictory ClueInfo if present in tree, based on 3 pruning conditions:
+     *      1. An unknown node asserts the same card another player is known to have.
+     *      2. An unknown node asserts that a player has a card that a known node states they do not have.
+     *          NOTE: An unknown node cannot assert that a player does not have a card, since unknown nodes
+     *                occur when the tree branches, which only occurs when a card is revealed.
+     *      3. An unknown node, if a player had it, would cause them to have too many cards in hand including known nodes.
+     * 
+     * Prunes until no more removable nodes are found
+     */
+    public void prune() {
+        boolean pruneSuccess = true;
+        while (pruneSuccess) { // prune until nothing more to prune
+            pruneSuccess = pruneOnce();
+        }
     }
 
     /*

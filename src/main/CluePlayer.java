@@ -1,3 +1,5 @@
+package main;
+
 import java.util.Scanner;
 import java.util.Set; 
 import java.util.HashSet; 
@@ -27,6 +29,23 @@ public class CluePlayer {
         return name; // TODO add more player info such as name as it is added
     }
 
+    @Override 
+    public boolean equals(Object other) { // TODO another weird equality method for HashSets, could make a wrapper for the solver with this instead of the whole player class
+        if (other.getClass()!=this.getClass()) {
+            return false;
+        }
+        return this.name.equals(((CluePlayer) other).name);
+    }
+
+    @Override
+    public int hashCode() {
+        return this.name.hashCode();
+    }
+
+    public String getName() {
+        return name;
+    }
+    
     public ClueHand getHand() {
         return hand;
     }

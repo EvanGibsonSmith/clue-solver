@@ -1,3 +1,6 @@
+package main;
+
+
 public class ClueInfo {
     CluePlayer guessingPlayer;
     CluePlayer revealingPlayer;
@@ -27,6 +30,26 @@ public class ClueInfo {
         else {
             return "(" + guessingPlayer.toString() + ", " + revealingPlayer.toString() + ", " + card.toString() + ", " + hasCard + ")";
         }
+    }
+
+    @Override
+    // TODO equality doesn't care about guessing player at the moment which is kind of silly, but is needed to fit HashCode to work for solver in HashSet
+    public boolean equals(Object obj) {
+        if (obj.getClass()!=this.getClass()) {
+            return false;
+        }
+        boolean guessPlayerEquality = ((ClueInfo) obj).guessingPlayer().equals(this.guessingPlayer());
+        boolean guessEquality = ((ClueInfo) obj).guess().equals(this.guess());
+        boolean revealingPlayerEquality = ((ClueInfo) obj).revealingPlayer().equals(this.revealingPlayer());
+        boolean cardEquality = ((ClueInfo) obj).card().equals(this.card());
+        boolean hasCardEquality = ((ClueInfo) obj).hasCard()==this.hasCard();
+        return guessPlayerEquality && guessEquality && revealingPlayerEquality && cardEquality && hasCardEquality;
+    }
+
+    
+    @Override
+    public int hashCode() {
+        return guessingPlayer().hashCode() + guess().hashCode() + revealingPlayer().hashCode() + card().hashCode() + Boolean.hashCode(hasCard);
     }
 
     public String toStringLong() {
@@ -78,5 +101,16 @@ public class ClueInfo {
 
     public boolean hasCard() {
         return hasCard;
+    }
+
+    public static void main(String[] args) {
+        ClueGame game = new ClueGame(3);
+        CluePlayer[] players = game.getPlayers();
+
+        ClueInfo info1 = new ClueInfo(players[0], new ClueGuess("peacock", "hall", "rope"), players[1], new ClueCard("hall"));
+        ClueInfo info2 = new ClueInfo(players[2], new ClueGuess("peacock", "hall", "rope"), new CluePlayer(players[1].getName(), 3), new ClueCard("hall"));
+        
+        // NOTE: Equality is weird right now, not taking guessing player into account for the purpose of HashSets
+        System.out.println(info1.equals(info2));
     }
 }
