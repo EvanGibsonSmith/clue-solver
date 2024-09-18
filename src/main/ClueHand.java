@@ -39,7 +39,7 @@ public class ClueHand {
         return -1;
     }
 
-    public ClueCard[] getHand() {
+    public ClueCard[] getCards() {
         return clueHand;
     }
 }

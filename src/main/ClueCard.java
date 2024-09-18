@@ -6,14 +6,14 @@ import java.util.Map;
 import java.util.Collections;
 
 public class ClueCard {
-    public static final Map<String, String> VALUES_TO_TYPE;
+    Map<String, String> VALUES_TO_TYPE;
 
-    static {
+    static final String[] defaultRooms = {"conservatory", "dining", "ballroom", "study", "hall", "lounge", "library", "billiard"};
+    static final String[] defaultPeople = {"scarlett", "mustard", "white", "green", "peacock", "plum"};
+    static final String[] defaultWeapons = {"candlestick", "knife", "lead pipe", "pistol", "rope", "wrench"};
+
+    private void setupValuesToType(String[] people, String[] rooms, String[] weapons) {
         Map<String, String> tempSet = new HashMap<>();
-        String[] rooms = {"conservatory", "dining", "ballroom", "study", "hall", "lounge", "library", "billiard"};
-        String[] people = {"scarlett", "mustard", "white", "green", "peacock", "plum"};
-        String[] weapons = {"candlestick", "knife", "lead pipe", "pistol", "rope", "wrench"};
-
         for (String person: people) {
             tempSet.put(person, "person");
         }
@@ -31,6 +31,11 @@ public class ClueCard {
     String value;
 
     public ClueCard(String value) {
+        this(value, defaultPeople, defaultRooms, defaultWeapons);
+    }
+
+    public ClueCard(String value, String[] people, String[] rooms, String[] weapons) {
+        setupValuesToType(people, rooms, weapons);
         if (!VALUES_TO_TYPE.keySet().contains(value)) {
             throw new RuntimeException("Value of card " + value + " was not in set of valid cards");
         }
@@ -53,7 +58,7 @@ public class ClueCard {
 
     @Override
     public int hashCode() {
-        return type.hashCode() + value.hashCode();
+        return type.hashCode() + value.hashCode() + VALUES_TO_TYPE.hashCode();
     }
 
     @Override
@@ -61,7 +66,8 @@ public class ClueCard {
         if (!(other instanceof ClueCard)) {
             return false;
         }
-        return ((this.value.equals(((ClueCard) other).value)) & (this.type.equals(((ClueCard) other).type)));
+        return ((this.value.equals(((ClueCard) other).value)) && (this.type.equals(((ClueCard) other).type))) 
+                && (this.VALUES_TO_TYPE.equals(((ClueCard) other).VALUES_TO_TYPE));
     }
 
     public static void main(String[] args) {

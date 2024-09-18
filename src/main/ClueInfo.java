@@ -1,5 +1,6 @@
 package main;
 
+import java.util.Objects;
 
 public class ClueInfo {
     CluePlayer guessingPlayer;
@@ -49,7 +50,7 @@ public class ClueInfo {
     
     @Override
     public int hashCode() {
-        return guessingPlayer().hashCode() + guess().hashCode() + revealingPlayer().hashCode() + card().hashCode() + Boolean.hashCode(hasCard);
+        return Objects.hash(guessingPlayer(), guess(), revealingPlayer(), card(), hasCard);
     }
 
     public String toStringLong() {

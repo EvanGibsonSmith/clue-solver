@@ -12,6 +12,12 @@ public class CluePlayer {
     int maxHandSize;
     String name;
 
+    public CluePlayer(String name, ClueHand hand) {
+        this.maxHandSize = hand.maxSize();
+        this.hand = hand;
+        this.name = name;
+    }
+
     public CluePlayer(String name, int handSize) {
         hand = new ClueHand(handSize);
         this.maxHandSize = handSize;
@@ -73,7 +79,7 @@ public class CluePlayer {
     private Set<ClueCard> getRevealableCardValues(ClueGuess guess) {
         Set<ClueCard> revealableCard = new HashSet<ClueCard>();
         // maybe could use a set for hand for something like this if hands are large?
-        for (ClueCard card: hand.getHand()) {
+        for (ClueCard card: hand.getCards()) {
             if (guess.getCardSet().contains(card)) {
                 revealableCard.add(card);
             }

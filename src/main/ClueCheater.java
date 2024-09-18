@@ -12,7 +12,7 @@ public class ClueCheater {
         System.out.println(Arrays.toString(game.revealedInfo()));
         ArrayList<ClueInfo> info = new ArrayList<>();
         CluePlayer[] players =game.getPlayers();
-        SolverTree tree = new SolverTree(players[0]);
+        SolverTree tree = new SolverTree(players[0], players);
 
         // add information that we know (if the guessing player was not THIS player, we do not know revealed card).
         // Since we are player 0, we know the revealed card
