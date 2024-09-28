@@ -9,13 +9,10 @@ import java.util.HashSet;
 
 public class NodeTree<T> {
     Node<T> head;
-    ArrayList<Node<T>> leaves;
 
     // TODO document
     public NodeTree(Node<T> head) {
         this.head = head;
-        leaves = new ArrayList<Node<T>>(); // TODO not used right now, could save time on getting leaves by storing within structure rather that recalculating each time
-        leaves.add(head);
     }
 
     public Node<T> getHead() {

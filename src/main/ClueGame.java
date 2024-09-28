@@ -22,7 +22,7 @@ public class ClueGame {
         for (int i=0; i<players.length; ++i) {
             players[i] = new CluePlayer("Player " + i, 3); // TODO don't set hand size like this, array
         }
-         dealCards();
+        dealCards();
     }
 
     public ClueGame(int numPlayers, int turnCursor) {

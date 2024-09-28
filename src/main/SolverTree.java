@@ -25,7 +25,7 @@ public class SolverTree {
     ClueCard[] roomCards;
     ClueCard[] weaponCards;
 
-    public void setupClueCards(String[] peopleStrings, String[] roomStrings, String[] weaponStrings) {
+    private void setupClueCards(String[] peopleStrings, String[] roomStrings, String[] weaponStrings) {
         peopleCards = new ClueCard[peopleStrings.length];
         roomCards = new ClueCard[roomStrings.length];
         weaponCards = new ClueCard[weaponStrings.length];
@@ -82,7 +82,11 @@ public class SolverTree {
     public void initializeKnown() {
         // cards this player has
         for (ClueCard card: this.player.getHand().getCards()) {
-            grow(new ClueInfo(null, null, this.player, card, true));
+            // this if shouldn't be needed in game where all hands are full, 
+            // but useful for tests or cases where somehow hands aren't evenly filled
+            if (card!=null) {
+                grow(new ClueInfo(this.player, null, this.player, card, true));
+            }
         }
 
         // cards this player doesn't have
@@ -93,7 +97,7 @@ public class SolverTree {
         Set<ClueCard> playerCards = new HashSet<>(Arrays.asList(this.player.getHand().getCards()));
         notPlayerCards.removeAll(playerCards); // make possibliti
         for (ClueCard card: notPlayerCards) {
-            grow(new ClueInfo(null, null, this.player, card, false));
+            grow(new ClueInfo(this.player, null, this.player, card, false));
         }
     }
 
@@ -105,14 +109,15 @@ public class SolverTree {
      * Clears tree of all children, leaving only head.
      */
     public void clear() {
-        tree.clear();
+        tree.clear(); 
+        bottom = tree.getHead(); // TODO shouldn't bottom since it is more a part of the tree be handles in NodeTree? I suppose bottom does need to deal with branching but still
     }
 
     /* 
      * When a player passes on a guess, we know they do not have any of the three cards in the guess.
      *  This covers that possibility
     */
-    private void growNullInfo(ClueInfo info) { // makes 3 (vertical) children of info, as we know they do not have ANY of the three cards
+    private void growUnrevealedInfo(ClueInfo info) { // makes 3 (vertical) children of info, as we know they do not have ANY of the three cards
         for (ClueCard card: info.guess().getCardSet()) { // put each card possibility in child\
             // add child to leaf
             ClueInfo newInfo = info.copyWithNewCard(card, false); // new card as possibility t
@@ -156,9 +161,16 @@ public class SolverTree {
         bottom = bottom.getChildren()[0];
     }
 
+    private void growThisPlayerNotHasInfo(ClueInfo info) {
+        // in this case, add a single child representing card this player doesn't have is good
+        bottom.addChild(new Node<ClueInfo>(info, 3));
+        bottom = bottom.getChildren()[0];
+    }
+
     /*
      * Given a piece of information, grows tree of possibilities accordingly 
      */
+    // TODO could break this into growInitialize function as well
     public void grow(ClueInfo info) {
         // 3 cases: We saw card revealed, we didn't see card revealed, no card was revealed (doesn't matter if our guess or another player)
         if (info.guessingPlayer()==player && info.hasCard()) { // if this player made guess and card was revealed, we know card
@@ -171,8 +183,11 @@ public class SolverTree {
             if (info.card()!=null) { // since no card reveals (hadCard=false), card should be null
                 throw new RuntimeException("If player made guess and was not shown card, info object should have null card.");
             } 
-            growNullInfo(info); // grows info for cards opponents don't have
+            growUnrevealedInfo(info); // grows info for cards opponents don't have
         }
+        else if (!info.hasCard() && info.guess()==null) { // if clueInfo showing this player doesn't have a card for initialization
+            growThisPlayerNotHasInfo(info);
+        }   
         else {
             throw new RuntimeException("Conditions of info did not satify any condition to grow SolverTree.");
         }
@@ -289,7 +304,8 @@ public class SolverTree {
      * Otherwise, there are still multiple possibilities. 
      * Returns null if no answer can be determined yet, otherwise, an array of the answer
      */
-    // TODO need an internal set for SolverTree to add final guesses that can be removed from possible answers at the end of this function
+    // TODO need an internal set for SolverTree to add final guesses that can be removed from possible answers at the end of this function to make solver actually perfect
+    // TODO could make partialInfo function to see what is known, even if the whole thing isn't known instead of all or nothing like this for testing
     public ClueCard[] getAnswer() {
         // TODO (do this after revamping the arguments)
         // TODO seperately consider what people DO and DON'T HAVE FOR ANSWER
@@ -471,8 +487,8 @@ public class SolverTree {
      * Given an array of info gathered throughout the game, builds a tree of possibilities for each player
      */
     public void build(ClueInfo[] totalInfo) { // TODO not very efficient at the moment, rebuilding constantly.
-        tree.clear(); // clear 
-        this.initializeKnown(); 
+        clear(); // clear to rebuild
+        initializeKnown(); 
         for (ClueInfo info: totalInfo) {
             grow(info);
         }
@@ -482,7 +498,7 @@ public class SolverTree {
      * Given an array of info gathered throughout the game, builds a tree of possibilities for each player
      */
     public void buildNoInitialization(ClueInfo[] totalInfo) { // TODO not very efficient at the moment, rebuilding constantly.
-        tree.clear(); // clear 
+        clear(); // clear to rebuild
         for (ClueInfo info: totalInfo) {
             grow(info);
         }

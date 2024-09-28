@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 
 import java.util.ArrayList;
@@ -44,7 +45,7 @@ class SolverTreeTest {
         info.add(new ClueInfo(players[1], new ClueGuess("plum", "hall", "lead pipe"),
                               players[2], null, true));
         
-        tree.build(info.toArray(new ClueInfo[0]));
+        tree.buildNoInitialization(info.toArray(new ClueInfo[0]));
         Set<ClueInfo> treeInfoSet = new HashSet<>();
         for (Node<ClueInfo> node: tree.getTree().getNodesBFS()) {
             treeInfoSet.add(node.getValue());
@@ -311,8 +312,23 @@ class SolverTreeTest {
      * Test of full sized game where nobody has the first guess Scarlett, Ballroom, Pistol
      */
     void bigGameNobodyHasFirstGuessWithInitialization() {
-        ClueGame game = new ClueGame(3);
-        CluePlayer[] players = game.getPlayers();
+        CluePlayer[] players = new CluePlayer[3]; // TODO make other tests like this instead of using game since game deals cards
+        for (int i=0; i<players.length; ++i) {
+            players[i] = new CluePlayer("Player " + i, 3); // TODO don't set hand size like this, array
+        }
+        // add cards for each players
+        players[0].getHand().addCard(new ClueCard("mustard"));
+        players[0].getHand().addCard(new ClueCard("peacock"));
+        players[0].getHand().addCard(new ClueCard("hall"));
+
+        players[1].getHand().addCard(new ClueCard("plum"));
+        players[1].getHand().addCard(new ClueCard("knife"));
+        players[1].getHand().addCard(new ClueCard("lead pipe"));
+
+        players[2].getHand().addCard(new ClueCard("white"));
+        players[2].getHand().addCard(new ClueCard("study"));
+        players[2].getHand().addCard(new ClueCard("lounge"));
+
         SolverTree tree = new SolverTree(players[0], players); // has default players, rooms, and weapons
 
         ArrayList<ClueInfo> info = new ArrayList<>();
@@ -320,8 +336,10 @@ class SolverTreeTest {
         // this line is needed without initilization of cards this player has and doesn't. Initlization adds this 
         // implicitly known information to the tree 
 
-        info.add(new ClueInfo(players[0], new ClueGuess("scarlett", "ballroom", "pistol"),
-                              players[0], null, false));
+        // this commented out guess shouldn't be needed if initialzation works to implicitly add this known
+        // info (that this player doesn't have any of these cards
+        //info.add(new ClueInfo(players[0], new ClueGuess("scarlett", "ballroom", "pistol"),
+        //                      players[0], null, false));
 
         info.add(new ClueInfo(players[0], new ClueGuess("scarlett", "ballroom", "pistol"),
                               players[1], null, false));
@@ -339,6 +357,82 @@ class SolverTreeTest {
         }
     }
 
+    @Test
+    /*
+     * Small game where answer is deduced because all other cards have been revealed
+     */
+    // NOTE: Somehow the method name smallGameProcessOfElimination causes an error which is complete black magic to me
+    void smallGameAllCardsShownToPlayer() {
+        CluePlayer[] players = new CluePlayer[3]; // TODO make other tests like this instead of using game since game deals cards
+        for (int i=0; i<players.length; ++i) {
+            players[i] = new CluePlayer("Player " + i, 3); // TODO don't set hand size like this, array
+        }
+
+        // add cards for each players
+        players[0].getHand().addCard(new ClueCard("mustard"));
+        players[0].getHand().addCard(new ClueCard("peacock"));
+        players[0].getHand().addCard(new ClueCard("hall"));
+
+        players[1].getHand().addCard(new ClueCard("plum"));
+        players[1].getHand().addCard(new ClueCard("knife"));
+        players[1].getHand().addCard(new ClueCard("lead pipe"));
+
+        players[2].getHand().addCard(new ClueCard("white"));
+        players[2].getHand().addCard(new ClueCard("study"));
+        players[2].getHand().addCard(new ClueCard("lounge"));
+
+        String[] peopleStrings = {"mustard", "peacock", "plum", "white", "scarlett"};
+        String[] roomStrings = {"hall", "study", "lounge", "ballroom"};
+        String[] weaponStrings = {"knife", "lead pipe", "pistol"};
+        SolverTree tree = new SolverTree(players[0], players, peopleStrings, roomStrings, weaponStrings); 
+
+        ArrayList<ClueInfo> info = new ArrayList<>();
+
+        // all card info is revealed (somehow? Doesn't occur in normal player) to player 0
+
+        // player 1 showns all of their cards
+        info.add(new ClueInfo(players[0], new ClueGuess("mustard", "hall", "knife"),
+                              players[1], new ClueCard("knife"), true));
+
+        info.add(new ClueInfo(players[0], new ClueGuess("mustard", "hall", "lead pipe"),
+                              players[1], new ClueCard("lead pipe"), true));
+
+        info.add(new ClueInfo(players[0], new ClueGuess("plum", "hall", "pistol"),
+                              players[1], new ClueCard("plum"), true));
+
+        // not enough info for solution yet
+        tree.build(info.toArray(new ClueInfo[0]));
+        assertNull(tree.getAnswer());
+
+        // player 2 shows all of their cards
+        info.add(new ClueInfo(players[0], new ClueGuess("white", "hall", "knife"),
+                players[2], new ClueCard("white"), true));
+
+        info.add(new ClueInfo(players[0], new ClueGuess("peacock", "lounge", "knife"),
+                players[2], new ClueCard("lounge"), true));
+
+        // still not enough information until final piece revealed
+        tree.build(info.toArray(new ClueInfo[0]));
+        assertNull(tree.getAnswer()); // CAN figure out scarlett and pistol but not knife yet
+
+        // final piece of info from player 2
+        info.add(new ClueInfo(players[0], new ClueGuess("peacock", "study", "knife"),
+                              players[2], new ClueCard("study"), true));
+
+        // we can deduce scarlett ballroom pistol since it isn't anywhere else on the board and player's don't have it
+        tree.build(info.toArray(new ClueInfo[0]));
+
+        ClueCard[] deducedAnswer = tree.getAnswer();
+        ClueCard[] realAnswer = new ClueCard[] {new ClueCard("scarlett"), new ClueCard("ballroom"), new ClueCard("pistol")};
+        for (int idx=0; idx<3; ++idx) {
+            System.out.println(deducedAnswer[idx]);
+            System.out.println(realAnswer[idx]);
+            assertEquals(deducedAnswer[idx], realAnswer[idx]);
+        }
+    }
+
+    
+    
     public static void main(String[] args) {
         ClueGame game = new ClueGame(3);
         CluePlayer[] players = game.getPlayers();
