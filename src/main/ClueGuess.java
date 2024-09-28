@@ -12,9 +12,16 @@ public class ClueGuess {
     Set<ClueCard> cardSet = new HashSet<>();
 
     public ClueGuess(String person, String room, String weapon) {
-        this.person = new ClueCard(person);
+        this.person = new ClueCard(person); // has default allowable people rooms and weapons
         this.room = new ClueCard(room);
         this.weapon = new ClueCard(weapon);
+        populateCardSet();
+    }
+
+    public ClueGuess(String person, String room, String weapon, String[] people, String[] rooms, String[] weapons) {
+        this.person = new ClueCard(person, people, rooms, weapons);
+        this.room = new ClueCard(room, people, rooms, weapons);
+        this.weapon = new ClueCard(weapon, people, rooms, weapons);
         populateCardSet();
     }
 

@@ -34,6 +34,8 @@ public class ClueCard {
         this(value, defaultPeople, defaultRooms, defaultWeapons);
     }
 
+
+    // TODO if this gets too clunky an object of valid types people, rooms weapons could be made.
     public ClueCard(String value, String[] people, String[] rooms, String[] weapons) {
         setupValuesToType(people, rooms, weapons);
         if (!VALUES_TO_TYPE.keySet().contains(value)) {
@@ -66,8 +68,7 @@ public class ClueCard {
         if (!(other instanceof ClueCard)) {
             return false;
         }
-        return ((this.value.equals(((ClueCard) other).value)) && (this.type.equals(((ClueCard) other).type))) 
-                && (this.VALUES_TO_TYPE.equals(((ClueCard) other).VALUES_TO_TYPE));
+        return ((this.value.equals(((ClueCard) other).value)) && (this.type.equals(((ClueCard) other).type)));
     }
 
     public static void main(String[] args) {

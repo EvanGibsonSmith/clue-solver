@@ -24,7 +24,7 @@ public class ClueCheater {
         // TODO not using defaults doesn't work very well at all right now, need to fix that 
         String[] people = {"mustard", "peacock", "plum", "white", "scarlett"};
         String[] rooms = {"hall", "study", "lounge", "ballroom"};
-        String[] weapons = {"knife", "lead pipe", "pistol"}; // TODO fix lead pipe space issue
+        String[] weapons = {"knife", "lead_pipe", "pistol"}; // TODO fix lead pipe space issue
         
         System.out.println("Please input player names (you will be the first player entered)");
         String[] playerNames = new String[numPlayers];
@@ -67,13 +67,10 @@ public class ClueCheater {
             System.out.println("Please input guessing player name");
             String guessingPlayerStr = scnr.next();
 
-            System.out.println("Please input guess [person] [room] [weapon], each on a new line" );
+            System.out.println("Please input guess [person] [room] [weapon]");
             String guessPerson = scnr.next();
             String guessRoom = scnr.next();
             String guessWeapon = scnr.next();
-            if (guessWeapon.equals("lead_pipe")) { // because lead pipe has a space, TODO better fix later but this is for testing
-                guessWeapon = "lead pipe";
-            }
 
             System.out.println("Please input true or false for if a card was shown");
             boolean hasCard = scnr.nextBoolean();
@@ -95,7 +92,7 @@ public class ClueCheater {
 
             // add information to tree
             // set up guess
-            ClueGuess guess = new ClueGuess(guessPerson, guessRoom, guessWeapon);
+            ClueGuess guess = new ClueGuess(guessPerson, guessRoom, guessWeapon, people, rooms, weapons);
             // get correct player objects for guessingPlayer and revealingPlayer
             CluePlayer guessingPlayer = null; // will be set if a correct player string was suppliied
             CluePlayer revealingPlayer = null;
@@ -113,7 +110,7 @@ public class ClueCheater {
                 infoCard = null;
             }
             else {
-                infoCard = new ClueCard(card);
+                infoCard = new ClueCard(card, people, rooms, weapons);
             }
             info.add(new ClueInfo(guessingPlayer, guess, revealingPlayer, infoCard, hasCard));
 
@@ -125,6 +122,7 @@ public class ClueCheater {
             }
             else {
                 System.out.println("Answer: " + Arrays.toString(answer));
+                break;
             }
         }
     }

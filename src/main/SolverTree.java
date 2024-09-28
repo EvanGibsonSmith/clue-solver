@@ -32,13 +32,13 @@ public class SolverTree {
         weaponCards = new ClueCard[weaponStrings.length];
 
         for (int personIdx=0; personIdx<peopleStrings.length; ++personIdx) {
-            peopleCards[personIdx] = new ClueCard(peopleStrings[personIdx]);
+            peopleCards[personIdx] = new ClueCard(peopleStrings[personIdx], peopleStrings, roomStrings, weaponStrings);
         }
         for (int roomIdx=0; roomIdx<roomStrings.length; ++roomIdx) {
-            roomCards[roomIdx] = new ClueCard(roomStrings[roomIdx]);
+            roomCards[roomIdx] = new ClueCard(roomStrings[roomIdx], peopleStrings, roomStrings, weaponStrings);
         }
         for (int weaponIdx=0; weaponIdx<weaponStrings.length; ++weaponIdx) {
-            weaponCards[weaponIdx] = new ClueCard(weaponStrings[weaponIdx]);
+            weaponCards[weaponIdx] = new ClueCard(weaponStrings[weaponIdx], peopleStrings, roomStrings, weaponStrings);
         }
     }
 
