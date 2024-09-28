@@ -16,6 +16,7 @@ public class SolverTree {
     CluePlayer player; // which player we are solving from the perspective of 
     CluePlayer[] players;
     Node<ClueInfo> bottom; // tree grows from this node
+    ClueCard[] centerCards = new ClueCard[0]; // keeps track of initially known center cards, by default empty
 
     static final String[] defaultRooms = {"conservatory", "dining", "ballroom", "study", "hall", "lounge", "library", "billiard"};
     static final String[] defaultPeople = {"scarlett", "mustard", "white", "green", "peacock", "plum"};
@@ -51,15 +52,35 @@ public class SolverTree {
         setupClueCards(defaultPeople, defaultRooms, defaultWeapons);
     }
 
+    public SolverTree(CluePlayer player, CluePlayer[] players, ClueCard[] centerCards) {
+        this(player, players);
+        this.centerCards = centerCards;
+    }
+
     public SolverTree(CluePlayer player, CluePlayer[] players, ClueCard[] peopleCards, ClueCard[] roomCards, ClueCard[] weaponCards) {
         this(player, players);
         this.peopleCards = peopleCards;
         this.roomCards = roomCards;
         this.weaponCards = weaponCards;
     }
+    
+    public SolverTree(CluePlayer player, CluePlayer[] players, ClueCard[] centerCards, ClueCard[] peopleCards, ClueCard[] roomCards, ClueCard[] weaponCards) {
+        this(player, players, peopleCards, roomCards, weaponCards);
+        this.centerCards = centerCards;
+    }
+
+    public SolverTree(CluePlayer player, CluePlayer[] players, ClueCard[] centerCards, String[] peopleStrings, String[] roomStrings, String[] weaponStrings) {
+        this(player, players, peopleStrings, roomStrings, weaponStrings);
+        this.centerCards = centerCards;
+    }
 
     public SolverTree(CluePlayer player, CluePlayer[] players, String[] peopleStrings, String[] roomStrings, String[] weaponStrings) {
-        this(player, players);
+        Node<ClueInfo> nullHead = new Node<>(null, 3); 
+        tree = new NodeTree<ClueInfo>(nullHead);
+        this.player = player;
+        this.players = players;
+        this.bottom = tree.getHead();
+
         setupClueCards(peopleStrings, roomStrings, weaponStrings);
     }
 
@@ -80,6 +101,20 @@ public class SolverTree {
      * and any cards in the center of the board given. TODO need to finish the center cards for this
      */
     public void initializeKnown() {
+        // initalize known center cards
+        for (ClueCard card: centerCards) {
+            if (card!=null) {
+                // no player's involved, card is known
+                grow(new ClueInfo(null, null, null, card, true)); 
+            }
+
+            // we know every player does not have this card, so this is info to collect
+            for (CluePlayer player: players) {
+                // "revealingPlayer" has "revealed" through the center cards they do not have this card
+                grow(new ClueInfo(null, null, player, card, false)); 
+            }
+        }
+
         // cards this player has
         for (ClueCard card: this.player.getHand().getCards()) {
             // this if shouldn't be needed in game where all hands are full, 
@@ -140,7 +175,7 @@ public class SolverTree {
         for (ClueCard potentialCard: info.guess().getCardSet()) {
             ClueInfo newPossibility = info.copyWithNewCard(potentialCard);
             bottom.addChild(new Node<ClueInfo>(newPossibility, 3));
-    }
+        }
         // add null node to make branches rejoin
         Node<ClueInfo> nullJoinNode = new Node<ClueInfo>(null, 3); // 
         for (Node<ClueInfo> node: bottom.getChildren()) { // joins horizontally split node to make main trunk
@@ -161,7 +196,7 @@ public class SolverTree {
         bottom = bottom.getChildren()[0];
     }
 
-    private void growThisPlayerNotHasInfo(ClueInfo info) {
+    private void growInfoDirect(ClueInfo info) {
         // in this case, add a single child representing card this player doesn't have is good
         bottom.addChild(new Node<ClueInfo>(info, 3));
         bottom = bottom.getChildren()[0];
@@ -176,7 +211,7 @@ public class SolverTree {
         if (info.guessingPlayer()==player && info.hasCard()) { // if this player made guess and card was revealed, we know card
             growSeenInfo(info);
         }
-        else if (info.guessingPlayer()!=player && info.hasCard()) {
+        else if (info.guessingPlayer()!=player && info.guessingPlayer()!=null && info.hasCard()) {
             growRevealedInfo(info);
         }
         else if (!info.hasCard() && info.guess()!=null) { // if no card revealed, we know what cards they don't have (note it does not matter which player caused this)
@@ -185,9 +220,14 @@ public class SolverTree {
             } 
             growUnrevealedInfo(info); // grows info for cards opponents don't have
         }
-        else if (!info.hasCard() && info.guess()==null) { // if clueInfo showing this player doesn't have a card for initialization
-            growThisPlayerNotHasInfo(info);
+        // if clueInfo showing this player doesn't have a card for initialization of this player and center cards
+        else if (!info.hasCard() && info.guess()==null) { 
+            growInfoDirect(info);
         }   
+        // for initalizing center cards, with no guessing player but known card
+        else if (info.guessingPlayer()==null && info.hasCard()) { 
+            growInfoDirect(info);
+        }
         else {
             throw new RuntimeException("Conditions of info did not satify any condition to grow SolverTree.");
         }
@@ -423,12 +463,10 @@ public class SolverTree {
             }
             ClueInfo cInfo = node.getValue();
             // from 1., 2., and 3., in docstring
-
-            // TODO FIX THIS
             // cond1
             boolean cond1 = false;
             for (CluePlayer player: seenPlayers) {
-                if (player.equals(node.getValue().revealingPlayer())) { // if same player has card again, no contradiction
+                if (player==null || player.equals(node.getValue().revealingPlayer())) { // if same player has card again, no contradiction
                     continue;
                 }
                 ClueInfoCardAndRevealingPlayer newPlayerInfoCopy = new ClueInfoCardAndRevealingPlayer(player, cInfo.card(), cInfo.hasCard);
@@ -484,27 +522,37 @@ public class SolverTree {
     }
 
     /*
-     * Given an array of info gathered throughout the game, builds a tree of possibilities for each player
+     * Given an array of info gathered throughout the game, builds a tree of possibilities for each player.
+     * Does not prune the output, so improper nodes (contradictions) may still remain.
      */
-    public void build(ClueInfo[] totalInfo) { // TODO not very efficient at the moment, rebuilding constantly.
+    public void buildNoPrune(ClueInfo[] totalInfo) { 
         clear(); // clear to rebuild
         initializeKnown(); 
         for (ClueInfo info: totalInfo) {
             grow(info);
         }
     }
-
+    
     /*
      * Given an array of info gathered throughout the game, builds a tree of possibilities for each player
      */
-    public void buildNoInitialization(ClueInfo[] totalInfo) { // TODO not very efficient at the moment, rebuilding constantly.
+    public void build(ClueInfo[] totalInfo) { 
+        clear(); // clear to rebuild
+        initializeKnown(); 
+        for (ClueInfo info: totalInfo) {
+            grow(info);
+        }
+        prune();
+    }
+
+    /*
+     * Given an array of info gathered throughout the game, builds a tree of possibilities for each player.
+     * Also does NOT prune tree.
+     */
+    public void buildNoInitialization(ClueInfo[] totalInfo) { 
         clear(); // clear to rebuild
         for (ClueInfo info: totalInfo) {
             grow(info);
         }
-    }
-
-    public static void main(String[] args) {
-        // TODO add tests here (especially for prune) 
     }
 }

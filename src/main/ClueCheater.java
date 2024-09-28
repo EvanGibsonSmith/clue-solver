@@ -15,9 +15,16 @@ public class ClueCheater {
         System.out.println("Please enter the hand size of player this game");
         int playerHandSize = scnr.nextInt();
 
-        String[] rooms = {"conservatory", "dining", "ballroom", "study", "hall", "lounge", "library", "billiard"};
+        /*
         String[] people = {"scarlett", "mustard", "white", "green", "peacock", "plum"};
-        String[] weapons = {"candlestick", "knife", "lead pipe", "pistol", "rope", "wrench"};
+        String[] rooms = {"conservatory", "dining", "ballroom", "study", "hall", "lounge", "library", "billiard"};
+        String[] weapons = {"candlestick", "knife", "lead pipe", "pistol", "rope", "wrench"};*/
+
+        // smaller set used for testing
+        // TODO not using defaults doesn't work very well at all right now, need to fix that 
+        String[] people = {"mustard", "peacock", "plum", "white", "scarlett"};
+        String[] rooms = {"hall", "study", "lounge", "ballroom"};
+        String[] weapons = {"knife", "lead pipe", "pistol"}; // TODO fix lead pipe space issue
         
         System.out.println("Please input player names (you will be the first player entered)");
         String[] playerNames = new String[numPlayers];
@@ -31,15 +38,28 @@ public class ClueCheater {
             players[i] = new CluePlayer(playerNames[i], playerHandSize); 
         }
 
-        // TODO could add custom card strings here to pass
-        SolverTree tree = new SolverTree(players[0], players, rooms, people, weapons); 
-
-        // initialize card information TODO need to add central card information here as well as elsewhere to make this work correctly
+        // initialize card information
         System.out.println("Please enter cards in your hand");
         for (int i=0; i<playerHandSize; ++i) {
             String cardStr = scnr.next();
+            if (cardStr.equals("done")) { // shouldn't be needed, but can use if unequal hand size
+                break;
+            }
             players[0].getHand().addCard(new ClueCard(cardStr));
         }
+
+        ArrayList<ClueCard> centerCards = new ArrayList<>();
+        System.out.println("Please enter shared cards in the center of the board. Enter 'done' when done. ");
+        while (true) {
+            String centerCardStr = scnr.next();
+            if (centerCardStr.equals("done")) {
+                break;
+            }
+            centerCards.add(new ClueCard(centerCardStr));
+        }
+        
+        // TODO could add custom card strings here to pass
+        SolverTree tree = new SolverTree(players[0], players, centerCards.toArray(new ClueCard[0]), people, rooms, weapons); 
 
         ArrayList<ClueInfo> info = new ArrayList<>();
         while (true) {
@@ -47,10 +67,13 @@ public class ClueCheater {
             System.out.println("Please input guessing player name");
             String guessingPlayerStr = scnr.next();
 
-            System.out.println("Please input guess [person] [room] [weapon]" );
+            System.out.println("Please input guess [person] [room] [weapon], each on a new line" );
             String guessPerson = scnr.next();
             String guessRoom = scnr.next();
             String guessWeapon = scnr.next();
+            if (guessWeapon.equals("lead_pipe")) { // because lead pipe has a space, TODO better fix later but this is for testing
+                guessWeapon = "lead pipe";
+            }
 
             System.out.println("Please input true or false for if a card was shown");
             boolean hasCard = scnr.nextBoolean();
@@ -84,7 +107,15 @@ public class ClueCheater {
                     revealingPlayer = player;
                 }
             }
-            info.add(new ClueInfo(guessingPlayer, guess, revealingPlayer, new ClueCard(card)));
+
+            ClueCard infoCard;
+            if (card==null) {
+                infoCard = null;
+            }
+            else {
+                infoCard = new ClueCard(card);
+            }
+            info.add(new ClueInfo(guessingPlayer, guess, revealingPlayer, infoCard, hasCard));
 
             // check if answer can be deduced
             tree.build(info.toArray(new ClueInfo[0])); // rebuild tree (quite inefficient but works)
@@ -95,7 +126,6 @@ public class ClueCheater {
             else {
                 System.out.println("Answer: " + Arrays.toString(answer));
             }
-            System.out.println(tree.getAnswer());
         }
     }
 }

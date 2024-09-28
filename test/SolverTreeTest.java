@@ -21,6 +21,7 @@ import data_structures.Node;
 import java.util.Set;
 import java.util.HashSet;
 
+// TODO prune now built into basic "build" method so needs to be removed from appropriate tests
 class SolverTreeTest {
     // NOTE: See prune for type 1 2 and 3 contradictions
 
@@ -413,7 +414,7 @@ class SolverTreeTest {
 
         // still not enough information until final piece revealed
         tree.build(info.toArray(new ClueInfo[0]));
-        assertNull(tree.getAnswer()); // CAN figure out scarlett and pistol but not knife yet
+        assertNull(tree.getAnswer()); // CAN figure out scarlett and pistol but not ballroom yet
 
         // final piece of info from player 2
         info.add(new ClueInfo(players[0], new ClueGuess("peacock", "study", "knife"),
@@ -431,7 +432,192 @@ class SolverTreeTest {
         }
     }
 
+    @Test
+    /*
+     * Small game where answer is deduced because all other cards have been revealed, using center cards to do this instead
+     * of another player.
+     */
+    // NOTE: Somehow the method name smallGameProcessOfElimination causes an error which is complete black magic to me
+    void smallGameCenterCardsRevealAnswer() {
+        CluePlayer[] players = new CluePlayer[2]; // TODO make other tests like this instead of using game since game deals cards
+        for (int i=0; i<players.length; ++i) {
+            players[i] = new CluePlayer("Player " + i, 3); // TODO don't set hand size like this, array
+        }
+        ClueCard[] centerCards = {new ClueCard("white"), new ClueCard("study"), new ClueCard("lounge")};
+
+        // add cards for each players
+        players[0].getHand().addCard(new ClueCard("mustard"));
+        players[0].getHand().addCard(new ClueCard("peacock"));
+        players[0].getHand().addCard(new ClueCard("hall"));
+
+        players[1].getHand().addCard(new ClueCard("plum"));
+        players[1].getHand().addCard(new ClueCard("knife"));
+        players[1].getHand().addCard(new ClueCard("lead pipe"));
+
+        String[] peopleStrings = {"mustard", "peacock", "plum", "white", "scarlett"};
+        String[] roomStrings = {"hall", "study", "lounge", "ballroom"};
+        String[] weaponStrings = {"knife", "lead pipe", "pistol"};
+        SolverTree tree = new SolverTree(players[0], players, centerCards, peopleStrings, roomStrings, weaponStrings); 
+
+        ArrayList<ClueInfo> info = new ArrayList<>();
+
+        // all card info is revealed (somehow? Doesn't occur in normal player) to player 0
+
+        // player 1 showns all of their cards
+        info.add(new ClueInfo(players[0], new ClueGuess("mustard", "hall", "knife"),
+                              players[1], new ClueCard("knife"), true));
+
+        info.add(new ClueInfo(players[0], new ClueGuess("mustard", "hall", "lead pipe"),
+                              players[1], new ClueCard("lead pipe"), true));
+
+        // still not enough information until final piece revealed (the rest provided by center cards)
+        tree.build(info.toArray(new ClueInfo[0]));
+        assertNull(tree.getAnswer()); // CAN figure out scarlett and pistol but not ballroom yet
+
+        info.add(new ClueInfo(players[0], new ClueGuess("plum", "hall", "pistol"),
+                              players[1], new ClueCard("plum"), true));
+
+        // we can deduce scarlett ballroom pistol since it isn't anywhere else on the board and player's don't have it
+        tree.build(info.toArray(new ClueInfo[0]));
+
+        ClueCard[] deducedAnswer = tree.getAnswer();
+        ClueCard[] realAnswer = new ClueCard[] {new ClueCard("scarlett"), new ClueCard("ballroom"), new ClueCard("pistol")};
+        for (int idx=0; idx<3; ++idx) {
+            System.out.println(deducedAnswer[idx]);
+            System.out.println(realAnswer[idx]);
+            assertEquals(deducedAnswer[idx], realAnswer[idx]);
+        }
+    }
+
+    @Test
+    /*
+     * Game where center cards deduce that a player must have the remaining card in a guess.
+     * For example, scarlett, ballroom, pistol can reveal that scarlett is correct if 
+     * ballroom and pistol are in the center
+     */
+    void smallGameCenterCardsDeducePlayerHand() {
+        CluePlayer[] players = new CluePlayer[2]; // TODO make other tests like this instead of using game since game deals cards
+        for (int i=0; i<players.length; ++i) {
+            players[i] = new CluePlayer("Player " + i, 3); // TODO don't set hand size like this, array
+        }
+        ClueCard[] centerCards = {new ClueCard("white"), new ClueCard("study"), new ClueCard("lounge")};
+
+        // add cards for each players
+        players[0].getHand().addCard(new ClueCard("mustard"));
+        players[0].getHand().addCard(new ClueCard("peacock"));
+        players[0].getHand().addCard(new ClueCard("hall"));
+
+        players[1].getHand().addCard(new ClueCard("plum"));
+        players[1].getHand().addCard(new ClueCard("knife"));
+        players[1].getHand().addCard(new ClueCard("lead pipe"));
+
+        String[] peopleStrings = {"mustard", "peacock", "plum", "white", "scarlett"};
+        String[] roomStrings = {"hall", "study", "lounge", "ballroom"};
+        String[] weaponStrings = {"knife", "lead pipe", "pistol"};
+        SolverTree tree = new SolverTree(players[0], players, centerCards, peopleStrings, roomStrings, weaponStrings); 
+
+        ArrayList<ClueInfo> info = new ArrayList<>();
+
+        // all card info is revealed (somehow? Doesn't occur in normal player) to player 0
+
+        // guessing this means that nothing revealed by player 1 allows pistol to be deduced
+        // since we do not have the card and white and study are in the center
+        info.add(new ClueInfo(players[0], new ClueGuess("white", "study", "pistol"),
+                              players[1], null, false));
+
+        tree.build(info.toArray(new ClueInfo[0]));
+        assertNull(tree.getAnswer()); // CAN figure out ballroom and pistol by process of elimination, but need plum to deduce scarlett
+        
+        // still not enough information, since scarlett and ballroom are not known.
+        // plum still needs to be eliminated
+        info.add(new ClueInfo(players[0], new ClueGuess("plum", "study", "lead pipe"),
+                              players[1], new ClueCard("plum"), true));
+
+        // now that plum has been shown the full answer can be deduced
+        tree.build(info.toArray(new ClueInfo[0]));
+
+        ClueCard[] deducedAnswer = tree.getAnswer();
+        ClueCard[] realAnswer = new ClueCard[] {new ClueCard("scarlett"), new ClueCard("ballroom"), new ClueCard("pistol")};
+        for (int idx=0; idx<3; ++idx) {
+            System.out.println(deducedAnswer[idx]);
+            System.out.println(realAnswer[idx]);
+            assertEquals(deducedAnswer[idx], realAnswer[idx]);
+        }
+    }
     
+    
+    @Test
+    /*
+     * Game where center cards deduce that a player must have the remaining card in a guess.
+     * For example, scarlett, ballroom, pistol can reveal that scarlett is correct if 
+     * ballroom and pistol are in the center. 
+     * 
+     * In this case, the guess in the previous 
+     * test that allowed pistol to be deduced no longer works because 2 of the 3 
+     * the cards in the guess are no longer known (either in this player's hand or the center).
+     * 
+     * After this first guess, plum is revealed, allowing that
+     */
+    void smallGameCenterCardsComplexDeduction() {
+        CluePlayer[] players = new CluePlayer[3]; // TODO make other tests like this instead of using game since game deals cards
+        for (int i=0; i<players.length; ++i) {
+            players[i] = new CluePlayer("Player " + i, 3); // TODO don't set hand size like this, array
+        }
+        ClueCard[] centerCards = {new ClueCard("white"), new ClueCard("study"), new ClueCard("lounge")};
+
+        // TODO figure out why the cards in player 1s hand matter to get an answer?
+        players[0].getHand().addCard(new ClueCard("mustard"));
+        players[0].getHand().addCard(new ClueCard("peacock"));
+        players[0].getHand().addCard(new ClueCard("hall"));
+
+        players[1].getHand().addCard(new ClueCard("plum"));
+        players[1].getHand().addCard(new ClueCard("knife"));
+        players[1].getHand().addCard(new ClueCard("lead pipe"));
+
+        // player 2 has nothing in hand, serves as dummy to allow another player to make guess player 0 cannot see
+
+        String[] peopleStrings = {"mustard", "peacock", "plum", "white", "scarlett"};
+        String[] roomStrings = {"hall", "study", "lounge", "ballroom"};
+        String[] weaponStrings = {"knife", "lead pipe", "pistol"};
+        SolverTree tree = new SolverTree(players[0], players, centerCards, peopleStrings, roomStrings, weaponStrings); 
+
+        ArrayList<ClueInfo> info = new ArrayList<>();
+
+        // We now can deduce Scarlett by process of elimination and ballroom
+        info.add(new ClueInfo(players[0], new ClueGuess("plum", "study", "pistol"),
+                              players[1], new ClueCard("plum"), true));
+
+        tree.buildNoPrune(info.toArray(new ClueInfo[0]));
+        tree.getAnswer();
+        assertNull(tree.getAnswer()); // CAN figure out ballroom by process of elimination, but do not know weapon
+        
+        // we can deduce that player 2 was shown lead pipe since we have access to white in center and 
+        // hall in our hand
+        info.add(new ClueInfo(players[2], new ClueGuess("white", "hall", "lead pipe"),
+                              players[1], null, true));
+        
+        // from knowing lead pipe, we still need knownledge of knife (directly or indirectly) to determine result
+        tree.buildNoPrune(info.toArray(new ClueInfo[0]));
+        assertNull(tree.getAnswer());
+
+        // Again, we know both the person and the place. therefore, player 1 must have revealed knife,
+        // and by process of elimination, the final weapon must be the pistol
+        info.add(new ClueInfo(players[2], new ClueGuess("peacock", "study", "knife"),
+                              players[1], null, true));
+
+        // thus, now the person, place and weapon are known, but contradiction pruning is needed
+        tree.buildNoPrune(info.toArray(new ClueInfo[0]));
+        assertNull(tree.getAnswer()); // do not know until pruning
+        tree.prune();
+
+        ClueCard[] deducedAnswer = tree.getAnswer();
+        ClueCard[] realAnswer = new ClueCard[] {new ClueCard("scarlett"), new ClueCard("ballroom"), new ClueCard("pistol")};
+        for (int idx=0; idx<3; ++idx) {
+            System.out.println(deducedAnswer[idx]);
+            System.out.println(realAnswer[idx]);
+            assertEquals(deducedAnswer[idx], realAnswer[idx]);
+        }
+    }
     
     public static void main(String[] args) {
         ClueGame game = new ClueGame(3);

@@ -2,6 +2,7 @@ package main;
 
 import java.util.Set;
 import java.util.HashSet;
+import java.util.Objects;
 
 // TODO again refactoring between these classes could definitely be done
 public class ClueInfoCardAndRevealingPlayer {
@@ -57,6 +58,6 @@ public class ClueInfoCardAndRevealingPlayer {
 
     @Override
     public int hashCode() {
-        return card.hashCode() + Boolean.hashCode(hasCard) + revealingPlayer.hashCode();
+        return Objects.hashCode(card) + Boolean.hashCode(hasCard) + Objects.hashCode(revealingPlayer);
     }
 }
