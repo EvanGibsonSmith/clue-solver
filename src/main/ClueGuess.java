@@ -9,7 +9,7 @@ public class ClueGuess {
     ClueCard person;
     ClueCard room;
     ClueCard weapon;
-    Set<ClueCard> cardSet = new HashSet<>();
+    Set<ClueCard> cardSet = new HashSet<>(); 
 
     public ClueGuess(String person, String room, String weapon) {
         this.person = new ClueCard(person); // has default allowable people rooms and weapons
@@ -26,8 +26,8 @@ public class ClueGuess {
     }
 
     public ClueGuess(ClueCard person, ClueCard room, ClueCard weapon) {
-        if (person.getType()!="player" | room.getType()!="roon" | weapon.getType()!="weapon") {
-            throw new RuntimeException("Types of inputted cards much match player, room, weapon.");
+        if (!person.getType().equals("person") | !room.getType().equals("room") | !weapon.getType().equals("weapon")) {
+            throw new RuntimeException("Types of inputted cards must match person, room, weapon.");
         }
         this.person = person;
         this.room = room;
@@ -38,6 +38,10 @@ public class ClueGuess {
     @Override 
     public String toString() {
         return person.toString() + ", " + room.toString() + ", " + weapon.toString();
+    }
+
+    public ClueCard[] cardArray() {
+        return new ClueCard[] {person, room, weapon};
     }
 
     @Override 

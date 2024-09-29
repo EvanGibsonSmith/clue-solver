@@ -587,7 +587,7 @@ class SolverTreeTest {
         info.add(new ClueInfo(players[0], new ClueGuess("plum", "study", "pistol"),
                               players[1], new ClueCard("plum"), true));
 
-        tree.buildNoPrune(info.toArray(new ClueInfo[0]));
+        tree.build(info.toArray(new ClueInfo[0]));
         tree.getAnswer();
         assertNull(tree.getAnswer()); // CAN figure out ballroom by process of elimination, but do not know weapon
         
@@ -597,7 +597,7 @@ class SolverTreeTest {
                               players[1], null, true));
         
         // from knowing lead pipe, we still need knownledge of knife (directly or indirectly) to determine result
-        tree.buildNoPrune(info.toArray(new ClueInfo[0]));
+        tree.build(info.toArray(new ClueInfo[0]));
         assertNull(tree.getAnswer());
 
         // Again, we know both the person and the place. therefore, player 1 must have revealed knife,
@@ -610,6 +610,67 @@ class SolverTreeTest {
         assertNull(tree.getAnswer()); // do not know until pruning
         tree.prune();
 
+        ClueCard[] deducedAnswer = tree.getAnswer();
+        ClueCard[] realAnswer = new ClueCard[] {new ClueCard("scarlett"), new ClueCard("ballroom"), new ClueCard("pistol")};
+        for (int idx=0; idx<3; ++idx) {
+            System.out.println(deducedAnswer[idx]);
+            System.out.println(realAnswer[idx]);
+            assertEquals(deducedAnswer[idx], realAnswer[idx]);
+        }
+    }
+
+    @Test
+    /*
+     * Final guess provides the last bit of information needed to get an ansewr
+     */
+    void finalGuessFailureDeduction() {
+        CluePlayer[] players = new CluePlayer[3]; // TODO make other tests like this instead of using game since game deals cards
+        for (int i=0; i<players.length; ++i) {
+            players[i] = new CluePlayer("Player " + i, 3); // TODO don't set hand size like this, array
+        }
+        ClueCard[] centerCards = {new ClueCard("white"), new ClueCard("study"), new ClueCard("lounge")};
+
+        // TODO figure out why the cards in player 1s hand matter to get an answer?
+        players[0].getHand().addCard(new ClueCard("mustard"));
+        players[0].getHand().addCard(new ClueCard("peacock"));
+        players[0].getHand().addCard(new ClueCard("hall"));
+
+        players[1].getHand().addCard(new ClueCard("plum"));
+        players[1].getHand().addCard(new ClueCard("knife"));
+        players[1].getHand().addCard(new ClueCard("lead pipe"));
+
+        // player 2 has nothing in hand, serves as dummy to allow another player to make guess player 0 cannot see
+
+        String[] peopleStrings = {"mustard", "peacock", "plum", "white", "scarlett"};
+        String[] roomStrings = {"hall", "study", "lounge", "ballroom"};
+        String[] weaponStrings = {"knife", "lead pipe", "pistol"};
+        SolverTree tree = new SolverTree(players[0], players, centerCards, peopleStrings, roomStrings, weaponStrings); 
+
+        ArrayList<ClueInfo> info = new ArrayList<>();
+
+        // We now can deduce Scarlett by process of elimination and ballroom
+        info.add(new ClueInfo(players[0], new ClueGuess("plum", "study", "pistol"),
+                              players[1], new ClueCard("plum"), true));
+
+        tree.build(info.toArray(new ClueInfo[0]));
+        tree.getAnswer();
+        assertNull(tree.getAnswer()); // CAN figure out ballroom by process of elimination, but do not know weapon
+        
+        // we can deduce that player 2 was shown lead pipe since we have access to white in center and 
+        // hall in our hand
+        info.add(new ClueInfo(players[2], new ClueGuess("white", "hall", "lead pipe"),
+                              players[1], null, true));
+        
+        // from knowing lead pipe, we still need knownledge of knife (directly or indirectly) to determine result
+        tree.build(info.toArray(new ClueInfo[0]));
+        assertNull(tree.getAnswer());
+
+        // player 2 guesses the 2 correct types, but with knife, allowing us to deduce pistol
+        Set<ClueGuess> finalGuesses = new HashSet<>();
+        finalGuesses.add(new ClueGuess("scarlett", "ballroom", "knife"));
+
+        // thus, now the person, place and weapon are known, but contradiction pruning is needed
+        tree.build(info.toArray(new ClueInfo[0]), finalGuesses);
         ClueCard[] deducedAnswer = tree.getAnswer();
         ClueCard[] realAnswer = new ClueCard[] {new ClueCard("scarlett"), new ClueCard("ballroom"), new ClueCard("pistol")};
         for (int idx=0; idx<3; ++idx) {

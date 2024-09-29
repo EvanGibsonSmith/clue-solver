@@ -17,6 +17,7 @@ public class SolverTree {
     CluePlayer[] players;
     Node<ClueInfo> bottom; // tree grows from this node
     ClueCard[] centerCards = new ClueCard[0]; // keeps track of initially known center cards, by default empty
+    Set<ClueGuess> finalGuesses = new HashSet<>(); // final guesses from players, edge case that can be helpful to deduce an answer
 
     static final String[] defaultRooms = {"conservatory", "dining", "ballroom", "study", "hall", "lounge", "library", "billiard"};
     static final String[] defaultPeople = {"scarlett", "mustard", "white", "green", "peacock", "plum"};
@@ -282,10 +283,10 @@ public class SolverTree {
     }*.
 
     /*
-     * Gets the card that can be deduced out of the possibilities through revealed cards. 
-     * If a single card cannot be determined, returns null.
+     * Gets the cards that can be deduced out of the possibilities through revealed cards. 
+     * If this is only one card, this card is known.
      */
-    private ClueCard byRevealing(Set<ClueInfo> knownInfo, ClueCard[] possibilities) {
+    private Set<ClueCard> byRevealingSet(Set<ClueInfo> knownInfo, ClueCard[] possibilities) {
         Set<ClueCard> outSet = new HashSet<ClueCard>(Arrays.asList(possibilities)); // get possibilities to remove
         for (ClueCard possibility: possibilities) {
             for (ClueInfo info: knownInfo) {
@@ -295,10 +296,18 @@ public class SolverTree {
             }
         }
         
+        return outSet;
+    }
+
+    /*
+     * Gets the card that can be deduced through revealing, otherwise returns null.
+     */
+    private ClueCard byRevealing(Set<ClueInfo> knownInfo, ClueCard[] possibilities) {
+        Set<ClueCard> outSet = byRevealingSet(knownInfo, possibilities);
         if (outSet.size()==1) {
-            return outSet.iterator().next(); // only one element to get
+            return outSet.iterator().next();
         }
-        return null; // return null if not output can be determined 
+        return null;
     }
 
     /*
@@ -336,7 +345,83 @@ public class SolverTree {
 
         return null; // return null if not output can be determined 
     }
-    
+
+
+    /* Gets all possibile guesses from sets given. Very slow a memory intensive for large sets. */
+    private Set<ClueGuess> getAllPossibilities(Set<ClueCard> peopleSet, Set<ClueCard> roomSet, Set<ClueCard> weaponSet) {
+        Set<ClueGuess> allPossibilities = new HashSet<>();
+        for (ClueCard personCard: peopleSet) {
+            for (ClueCard roomCard: roomSet) {
+                for (ClueCard weaponCard: weaponSet) {
+                    allPossibilities.add(new ClueGuess(personCard, roomCard, weaponCard));
+                }
+            }
+        }
+        return allPossibilities;
+    }
+
+    /*
+     * Determines if the answer can be determined by using another
+     * player's final guess to elimate one of a few possibilites.
+     * However, due to the number of potential possibilities and the 
+     * very little information somebody failing the final guess gives,
+     * this almost always fails.
+     */
+    // TODO in far future when trying to understannd other player strategy, tracking with player
+    // made the guess for finalGuesses may be useful for this
+    private ClueGuess finalGuessesEdgeCase(Set<ClueInfo> knownNodesInfo, ClueCard[] possibilitesByNotRevealing) {
+        // short circuit to save time as this is often the case, and this doesn't need to be considered
+        if (finalGuesses.size()==0) {return null;} 
+
+        Set<ClueCard> peopleSet = byRevealingSet(knownNodesInfo, peopleCards);
+        Set<ClueCard> roomsSet = byRevealingSet(knownNodesInfo, roomCards);
+        Set<ClueCard> weaponsSet = byRevealingSet(knownNodesInfo, weaponCards);
+
+        // go through people rooms and weapons and collect either number of possibilities or certain ansewr for each
+        int numPossibleAnswers = 1;
+        if (possibilitesByNotRevealing[0]==null) { // if it is not equal to null, we have the answer, so the only possibility is one, and we do not have to multiply
+            numPossibleAnswers *= peopleSet.size();
+        }
+        else {
+            peopleSet.clear(); // since answer is known, make possibilites just include this one
+            peopleSet.add(possibilitesByNotRevealing[0]);
+        }
+
+        if (possibilitesByNotRevealing[1]==null) {
+            numPossibleAnswers *= roomsSet.size();
+        }
+        else {
+            roomsSet.clear(); // since answer is known, make possibilites just include this one
+            roomsSet.add(possibilitesByNotRevealing[1]);
+        }
+
+        if (possibilitesByNotRevealing[2]==null) {
+            numPossibleAnswers *= weaponsSet.size();
+        }
+        else {
+            weaponsSet.clear(); // since answer is known, make possibilites just include this one
+            weaponsSet.add(possibilitesByNotRevealing[2]);
+        }
+
+        // if there are too many possibilities for the final guesses to give a definite answer, don't even bother
+        if (numPossibleAnswers-1>finalGuesses.size()) { 
+            return null;
+        }
+
+        // in the case there are just enough final guesses to make it possible,
+        // check those final guesses actually make the possibilities down to 1.
+        // NOTE: Without the check above, this would calculate a HUGE set of far too many possibilites
+        // this edge case will then only be considered when this is tractable (unless an imposslble number of final guesses have been made)
+        Set<ClueGuess> allPossibilites = getAllPossibilities(peopleSet, roomsSet, weaponsSet);
+        for (ClueGuess failedFinalGuess: finalGuesses) { // one by one remove from allPossibilities
+            allPossibilites.remove(failedFinalGuess);
+        }
+        if (allPossibilites.size()==1) { // if final guesses narrowed it down, return answer, otherwise null
+            return allPossibilites.iterator().next();
+        }
+        return null;
+    }
+
     /*
      * Determines if all the info needed for a guess has been gathered. Should be run on a pruned tree.
      * This is done by considering all paths down the tree (assuming it has been properly pruned)
@@ -363,9 +448,12 @@ public class SolverTree {
         // combine arrays based on each technique, taking known results for each category
         for (int idx=0; idx<possibilitesByNotRevealing.length; ++idx) {
             if (possibilitiesByRevealing[idx]==null && possibilitesByNotRevealing[idx]==null) { // if both null don't know answer
-                return null;
+                // check finalGuesses edge case (which almost always is null) since answer not determined otherwise
+                ClueGuess answer = finalGuessesEdgeCase(knownNodesInfo, possibilitesByNotRevealing);
+                if (answer==null) {return null;} // usually happens since final guess failure don't provide much info
+                return answer.cardArray(); 
             }
-            else if (possibilitiesByRevealing[idx]==null) {
+            else if (possibilitiesByRevealing[idx]==null) { // if one is not null, select the answer from that one
                 out[idx] = possibilitesByNotRevealing[idx];
             }
             else if (possibilitesByNotRevealing[idx]==null) {
@@ -375,7 +463,7 @@ public class SolverTree {
                 out[idx] = possibilitiesByRevealing[idx]; // doesn't matter which is used (revealing or not revealing) since they are the same
             }
         }
-
+    
         // we know answer here since out has no nulls
         return out;
     }
@@ -543,6 +631,23 @@ public class SolverTree {
             grow(info);
         }
         prune();
+    }
+
+     /*
+     * Given an array of info gathered throughout the game, builds a tree of possibilities for each player.
+     * Also changes the final guesses that have been made by other players within the tree for getAnswer().
+     */
+    public void build(ClueInfo[] totalInfo, Set<ClueGuess> finalGuesses) { 
+        build(totalInfo);
+        setFinalGuesses(finalGuesses);
+    }
+
+    /*
+     * Sets the final guesses that have been played, which are used in edge case 
+     * to get answer in getAnswer().
+     */
+    public void setFinalGuesses(Set<ClueGuess> finalGuesses) {
+        this.finalGuesses = finalGuesses;
     }
 
     /*

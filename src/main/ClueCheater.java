@@ -2,9 +2,22 @@ package main;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Scanner;
+import java.util.Set;
 
 public class ClueCheater {
+
+    static private boolean checkAnswer(SolverTree tree) {
+        ClueCard[] answer = tree.getAnswer();
+        if (answer==null) {
+            System.out.println("No answer found yet!");
+            return false;
+        }
+        System.out.println("Answer: " + Arrays.toString(answer));
+        return true;
+    }
     
     public static void main(String[] args) {
         // TODO rebuilding repeatedly instead of using grow is inefficient, but should work fine
@@ -21,10 +34,9 @@ public class ClueCheater {
         String[] weapons = {"candlestick", "knife", "lead pipe", "pistol", "rope", "wrench"};*/
 
         // smaller set used for testing
-        // TODO not using defaults doesn't work very well at all right now, need to fix that 
         String[] people = {"mustard", "peacock", "plum", "white", "scarlett"};
         String[] rooms = {"hall", "study", "lounge", "ballroom"};
-        String[] weapons = {"knife", "lead_pipe", "pistol"}; // TODO fix lead pipe space issue
+        String[] weapons = {"knife", "lead_pipe", "pistol"}; 
         
         System.out.println("Please input player names (you will be the first player entered)");
         String[] playerNames = new String[numPlayers];
@@ -61,11 +73,22 @@ public class ClueCheater {
         // TODO could add custom card strings here to pass
         SolverTree tree = new SolverTree(players[0], players, centerCards.toArray(new ClueCard[0]), people, rooms, weapons); 
 
-        ArrayList<ClueInfo> info = new ArrayList<>();
+        List<ClueInfo> info = new ArrayList<>();
+        Set<ClueGuess> finalGuesses = new HashSet<>();
         while (true) {
             System.out.println("Waiting for next piece of info...");
-            System.out.println("Please input guessing player name");
+            System.out.println("Please input guessing player name or 'final' if a final guess has been done.");
             String guessingPlayerStr = scnr.next();
+            if (guessingPlayerStr.equals("final")) {
+                System.out.println("Please input final guess [person] [room] [weapon]");
+                String guessPerson = scnr.next();
+                String guessRoom = scnr.next();
+                String guessWeapon = scnr.next();
+                finalGuesses.add(new ClueGuess(guessPerson, guessRoom, guessWeapon));
+                tree.build(info.toArray(new ClueInfo[0]), finalGuesses);
+                boolean answerFound = checkAnswer(tree);
+                if (answerFound) {break;} // done if answer found
+            }
 
             System.out.println("Please input guess [person] [room] [weapon]");
             String guessPerson = scnr.next();
@@ -114,16 +137,10 @@ public class ClueCheater {
             }
             info.add(new ClueInfo(guessingPlayer, guess, revealingPlayer, infoCard, hasCard));
 
-            // check if answer can be deduced
-            tree.build(info.toArray(new ClueInfo[0])); // rebuild tree (quite inefficient but works)
-            ClueCard[] answer = tree.getAnswer();
-            if (answer==null) {
-                System.out.println("No answer found yet!");
-            }
-            else {
-                System.out.println("Answer: " + Arrays.toString(answer));
-                break;
-            }
+            tree.build(info.toArray(new ClueInfo[0]));
+            boolean answerFound = checkAnswer(tree);
+            if (answerFound) {break;}
         }
+        scnr.close();
     }
 }

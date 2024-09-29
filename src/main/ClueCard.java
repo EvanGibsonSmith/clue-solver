@@ -60,7 +60,7 @@ public class ClueCard {
 
     @Override
     public int hashCode() {
-        return type.hashCode() + value.hashCode() + VALUES_TO_TYPE.hashCode();
+        return type.hashCode() + value.hashCode();
     }
 
     @Override
