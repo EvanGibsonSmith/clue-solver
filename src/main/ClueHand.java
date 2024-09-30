@@ -15,7 +15,10 @@ public class ClueHand {
     @Override
     public String toString() {
         String out = "";
-        for (int i=0; i<handIndex; ++i) { // TODO fix printing null cards
+        for (int i=0; i<handIndex; ++i) {
+            if (clueHand[i]==null) {
+                break;
+            }
             out += clueHand[i].toString() + ", ";
         }
         return out.substring(0, out.length()-2);
@@ -24,7 +27,6 @@ public class ClueHand {
     public int size() {
         return handIndex;
     }
-
 
     public int maxSize() {
         return handSize;

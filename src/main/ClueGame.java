@@ -4,8 +4,7 @@ import java.util.Set;
 import java.util.HashSet;
 import java.util.ArrayList;
 
-// TODO document: Note that this implemnetation of clue doesn't include dice or randomness other than the initial placement fo the killer/weapon/room
-// TODO, in future could have ClueGame without the revealedInfo and a CheaterClueGame that handles that revealed info
+// NOTE: This class isn't used in any way for the solver, and needs to be made into a playable game if used
 public class ClueGame {
     CluePlayer[] players;
     int turnCursor = 0;
@@ -18,9 +17,8 @@ public class ClueGame {
         // populate new playerrs
         this.numPlayers = numPlayers;
         players = new CluePlayer[numPlayers];
-        // TODO populate these players with cards
         for (int i=0; i<players.length; ++i) {
-            players[i] = new CluePlayer("Player " + i, 3); // TODO don't set hand size like this, array
+            players[i] = new CluePlayer("Player " + i, 3); // TODO don't set hand size like this, give proper number from game rules
         }
         dealCards();
     }

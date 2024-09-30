@@ -3,8 +3,6 @@ package main;
 import java.util.Set;
 import java.util.HashSet;
 
-// TODO document
-// TODO for the sake of the solver, ClueCard objects aren't needed. Could make a trimmed down version later
 public class ClueGuess {
     ClueCard person;
     ClueCard room;

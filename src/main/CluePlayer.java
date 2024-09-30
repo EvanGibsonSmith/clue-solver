@@ -4,9 +4,6 @@ import java.util.Scanner;
 import java.util.Set; 
 import java.util.HashSet; 
 
-// TODO add functionality to make final guess (to leave the game or win)
-// TODO make the clue player collect the informatoin since we as a cheating player are not omnipotent? 
-// Game can also theoretically have this information if we keep track of a player, but does it make more sense to have it in Player?
 public class CluePlayer {
     ClueHand hand; 
     int maxHandSize;

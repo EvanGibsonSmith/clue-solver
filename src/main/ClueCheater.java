@@ -20,23 +20,23 @@ public class ClueCheater {
     }
     
     public static void main(String[] args) {
-        // TODO rebuilding repeatedly instead of using grow is inefficient, but should work fine
+        // rebuilding repeatedly instead of using grow is inefficient, but should work fine
         Scanner scnr = new Scanner(System.in);
         System.out.println("Please enter the number of players in the game");
         int numPlayers = scnr.nextInt();
-        // TODO need to calculate proper hand size for each player, instead of asking?
+        // the amount of cards in a hand for each player should be defined based on the number of players in the game,
+        // but can still ask
         System.out.println("Please enter the hand size of player this game");
         int playerHandSize = scnr.nextInt();
 
-        /*
         String[] people = {"scarlett", "mustard", "white", "green", "peacock", "plum"};
         String[] rooms = {"conservatory", "dining", "ballroom", "study", "hall", "lounge", "library", "billiard"};
-        String[] weapons = {"candlestick", "knife", "lead pipe", "pistol", "rope", "wrench"};*/
+        String[] weapons = {"candlestick", "knife", "lead pipe", "pistol", "rope", "wrench"};
 
         // smaller set used for testing
-        String[] people = {"mustard", "peacock", "plum", "white", "scarlett"};
+        /*String[] people = {"mustard", "peacock", "plum", "white", "scarlett"};
         String[] rooms = {"hall", "study", "lounge", "ballroom"};
-        String[] weapons = {"knife", "lead_pipe", "pistol"}; 
+        String[] weapons = {"knife", "lead_pipe", "pistol"}; */
         
         System.out.println("Please input player names (you will be the first player entered)");
         String[] playerNames = new String[numPlayers];
@@ -70,7 +70,6 @@ public class ClueCheater {
             centerCards.add(new ClueCard(centerCardStr));
         }
         
-        // TODO could add custom card strings here to pass
         SolverTree tree = new SolverTree(players[0], players, centerCards.toArray(new ClueCard[0]), people, rooms, weapons); 
 
         List<ClueInfo> info = new ArrayList<>();

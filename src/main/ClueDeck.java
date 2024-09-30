@@ -7,8 +7,7 @@ import java.util.Random;
 import java.util.Collections;
 import java.util.Stack;
 
-// TODO document. This ALSO includes the ones in the manila envelope
-
+// NOTE: at the moment incomplete because it is not needed for the clue solver
 public class ClueDeck {
     Stack<ClueCard> cards = new Stack<>();
     int totalSize;
@@ -19,7 +18,6 @@ public class ClueDeck {
         this.random = new Random();
 
         // add all cards to array 
-        // TODO make this use the existing valid values in Clue Card
         String[] rooms = {"conservatory", "dining", "ballroom", "study", "hall", "lounge", "library", "billiard"};
         String[] people = {"scarlett", "mustard", "white", "green", "peacock", "plum"};
         String[] weapons = {"candlestick", "knife", "lead pipe", "pistol", "rope", "wrench"};

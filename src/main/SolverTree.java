@@ -9,10 +9,8 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Set;
 
-// TODO make another implementation of tree that uses an underlying array instead
 public class SolverTree {
-    NodeTree<ClueInfo> tree; // TODO MAKE THIS STORED AS A SET IN HERE!!!!!
-    // NOTE: I think technically speaking, the player we are from the perspective of is not needed if info is properly used (not giving too much info)
+    NodeTree<ClueInfo> tree; 
     CluePlayer player; // which player we are solving from the perspective of 
     CluePlayer[] players;
     Node<ClueInfo> bottom; // tree grows from this node
@@ -95,11 +93,11 @@ public class SolverTree {
         return out.substring(0, out.length()-2) + "]";
     }
 
-    /*
+    /**
      * Initialized known cards based on this player. 
      * This includes knowing that player has all cards in their hand, 
      * as well as this player not having all cards not in their hand
-     * and any cards in the center of the board given. TODO need to finish the center cards for this
+     * and any cards in the center of the board given.
      */
     public void initializeKnown() {
         // initalize known center cards
@@ -141,15 +139,15 @@ public class SolverTree {
         return tree;
     }
 
-    /*
+    /**
      * Clears tree of all children, leaving only head.
      */
     public void clear() {
         tree.clear(); 
-        bottom = tree.getHead(); // TODO shouldn't bottom since it is more a part of the tree be handles in NodeTree? I suppose bottom does need to deal with branching but still
+        bottom = tree.getHead(); 
     }
 
-    /* 
+    /**
      * When a player passes on a guess, we know they do not have any of the three cards in the guess.
      *  This covers that possibility
     */
@@ -166,10 +164,11 @@ public class SolverTree {
         // bottom is now correct node in tree
     }   
 
-    /*
+    /**
      * For case in which something is revealed to another player, but we do not know what.
      * When another player reveals a card, we know they must have one of those three cards from the guess.
      * This method branches into those possibilities.
+     * @param info information to grow
      */
     private void growRevealedInfo(ClueInfo info) {
         // give bottom node children for each possibility of card
@@ -185,8 +184,10 @@ public class SolverTree {
         bottom = nullJoinNode; // update bottom node
     }
 
-    /*
-     * TODO document
+    /**
+     * Case in which the info has been seen by this player in the solver.
+     * Can simply grow one node represnting this information.
+     * @param info information to grow
      */
     private void growSeenInfo(ClueInfo info) {
         if (info.card()==null) { // this should not happen, if info is correct
@@ -197,16 +198,21 @@ public class SolverTree {
         bottom = bottom.getChildren()[0];
     }
 
+    /**
+     * Grows info given similar to growSeenInfo, but does not check if the info has a card.
+     * This is used as a helper in grow for information used initialize known info.
+     * @param info information to grow
+     */
     private void growInfoDirect(ClueInfo info) {
         // in this case, add a single child representing card this player doesn't have is good
         bottom.addChild(new Node<ClueInfo>(info, 3));
         bottom = bottom.getChildren()[0];
     }
 
-    /*
+    /**
      * Given a piece of information, grows tree of possibilities accordingly 
+     * @param info piece of information to grow on tree
      */
-    // TODO could break this into growInitialize function as well
     public void grow(ClueInfo info) {
         // 3 cases: We saw card revealed, we didn't see card revealed, no card was revealed (doesn't matter if our guess or another player)
         if (info.guessingPlayer()==player && info.hasCard()) { // if this player made guess and card was revealed, we know card
@@ -234,57 +240,12 @@ public class SolverTree {
         }
     }
 
-    /* 
-     * TODO DOCUMENT
-     */
-    private Set<ClueCard> shownCards(Set<ClueInfo> allInfo) { 
-        // TODO stub
-        Set<ClueCard> shownCards = new HashSet<>();
-        for (ClueInfo info: allInfo) {
-            if (info.hasCard()) { // if this card was shown add it
-                shownCards.add(info.card());
-            }
-        }
-        return shownCards;
-    }
-
-    /*private Set<ClueCard> hasCards(Set<ClueInfo> knownNodesInfo) {
-        Set<ClueCard> out = new HashSet<>();
-        for (ClueInfo info: knownNodesInfo) {
-            if (info.hasCard()) {
-                out.add(info.card());
-            }
-        }
-        return out;
-    }
-
-    private Set<ClueCard> notHasCards(Set<ClueInfo> knownNodesInfo) {
-        Set<ClueCard> out = new HashSet<>();
-        for (ClueInfo info: knownNodesInfo) {
-            if (!info.hasCard()) {
-                out.add(info.card());
-            }
-        }
-        return out;
-    }*/
-
-    /*
-     * Cards that a player has or are in the center. Builds a set of cards that cannot be in the manila envelope.
-     */
-    /*private Set<ClueCard> foundCards(Set<ClueInfo> knownNodesInfo) {
-        Set<ClueCard> foundCards = new HashSet<>();
-
-        for (ClueInfo info: knownNodesInfo) {
-            if (info.hasCard()) { // if a card was revealed (AND known since from knownNodesInfo), remove as possibility
-                foundCards.add(info.card());
-            }
-        }
-        return foundCards;
-    }*.
-
-    /*
+    /**
      * Gets the cards that can be deduced out of the possibilities through revealed cards. 
-     * If this is only one card, this card is known.
+     * Generates a set of possible people, rooms or weapons (depending on possibilities) 
+     * that could be in the final answer.
+     * @param knownInfo set of information from tree that is known for certain 
+     * @param possibilities the possibilities for a card to be, people, rooms, or weapons.
      */
     private Set<ClueCard> byRevealingSet(Set<ClueInfo> knownInfo, ClueCard[] possibilities) {
         Set<ClueCard> outSet = new HashSet<ClueCard>(Arrays.asList(possibilities)); // get possibilities to remove
@@ -299,8 +260,12 @@ public class SolverTree {
         return outSet;
     }
 
-    /*
+    /**
      * Gets the card that can be deduced through revealing, otherwise returns null.
+     * @param knownInfo set of information from tree that is known for certain
+     * @param possibilities the possibilities for a card to be, people, rooms, or weapons.
+     * @return null if the set of all possible revealed cards is >1, and the answwer cannot be determined.
+     * Otherwisee, returns the answer from a set of 1.
      */
     private ClueCard byRevealing(Set<ClueInfo> knownInfo, ClueCard[] possibilities) {
         Set<ClueCard> outSet = byRevealingSet(knownInfo, possibilities);
@@ -310,9 +275,13 @@ public class SolverTree {
         return null;
     }
 
-    /*
+    /**
      * Gets the card that can be determined from possibilities by removing 
      * If a single card cannot be determined, returns null.
+     * @param knownInfo set of information from tree that is known for certain
+     * @param possibilities the possibilities for a card to be, people, rooms, or weapons.
+     * @return a card that can be deduced using information of players not revealing cards, 
+     *         or null if that cannot be determined
      */
     private ClueCard byNotRevealing(Set<ClueInfo> knownInfo, ClueCard[] possibilities) {
         for (ClueCard possibility: possibilities) {
@@ -347,7 +316,11 @@ public class SolverTree {
     }
 
 
-    /* Gets all possibile guesses from sets given. Very slow a memory intensive for large sets. */
+    /** Gets all possibile guesses from sets given. Very slow a memory intensive for large sets. 
+     * @param peopleSet the set of people that through deduction could be in the manila envelope
+     * @param roomSet the set of rooms that through deduction could be in the manila envelope
+     * @param weaponSet the set of weapons that through deduction could be in the manila envelope
+    */
     private Set<ClueGuess> getAllPossibilities(Set<ClueCard> peopleSet, Set<ClueCard> roomSet, Set<ClueCard> weaponSet) {
         Set<ClueGuess> allPossibilities = new HashSet<>();
         for (ClueCard personCard: peopleSet) {
@@ -360,15 +333,18 @@ public class SolverTree {
         return allPossibilities;
     }
 
-    /*
+    /**
      * Determines if the answer can be determined by using another
      * player's final guess to elimate one of a few possibilites.
      * However, due to the number of potential possibilities and the 
      * very little information somebody failing the final guess gives,
      * this almost always fails.
+     * @param knownInfo set of information from tree that is known for certain
+     * @param possibilitesByNotRevealing array of [person, room, weapon] that could be the answer due to information 
+     *                                   relating to not revealing cards. Will have null if a particular field cannot be determined.
+     *                                   note that this cannot be completely populated, or else the answer could be determined
+     *                                   without this edge case.
      */
-    // TODO in far future when trying to understannd other player strategy, tracking with player
-    // made the guess for finalGuesses may be useful for this
     private ClueGuess finalGuessesEdgeCase(Set<ClueInfo> knownNodesInfo, ClueCard[] possibilitesByNotRevealing) {
         // short circuit to save time as this is often the case, and this doesn't need to be considered
         if (finalGuesses.size()==0) {return null;} 
@@ -422,18 +398,14 @@ public class SolverTree {
         return null;
     }
 
-    /*
+    /**
      * Determines if all the info needed for a guess has been gathered. Should be run on a pruned tree.
      * This is done by considering all paths down the tree (assuming it has been properly pruned)
      * and if they all result in only 1 three card possibility for the manila envelope, we are done.
      * Otherwise, there are still multiple possibilities. 
      * Returns null if no answer can be determined yet, otherwise, an array of the answer
      */
-    // TODO need an internal set for SolverTree to add final guesses that can be removed from possible answers at the end of this function to make solver actually perfect
-    // TODO could make partialInfo function to see what is known, even if the whole thing isn't known instead of all or nothing like this for testing
     public ClueCard[] getAnswer() {
-        // TODO (do this after revamping the arguments)
-        // TODO seperately consider what people DO and DON'T HAVE FOR ANSWER
         Set<ClueCard> possibleCards = new HashSet<>();
         possibleCards.addAll(Arrays.asList(peopleCards));
         possibleCards.addAll(Arrays.asList(roomCards));
@@ -468,7 +440,7 @@ public class SolverTree {
         return out;
     }
     
-    /*
+    /**
      * Gets a HashSet of all known information (nodes with no children).
      * This function exploits the fact that nodes with 3 children will 
      * reconnect a null node afterward.
@@ -487,15 +459,18 @@ public class SolverTree {
         return knownInfo;
     }
 
-    /*
-     * TODO document
+    /**
+     * Creates a Map of each player, and the ClueHand containing the cards we know for certain they have.
+     * So, this only has known info and not "potential" cards. If a card is not know in a player's hand,
+     * the corresponding hand object has null cards.
+     * @param knownInfoSet set of all known info in which there are not more possibilities.
      */
     public Map<CluePlayer, ClueHand> playerCards(Set<ClueInfo> knownInfoSet) {
         Map<CluePlayer, ClueHand> playerCards = new HashMap<>(); // known cards for each player
         for (ClueInfo info: knownInfoSet) {
             CluePlayer revPlayer = info.revealingPlayer();
             if (!playerCards.containsKey(revPlayer)) { // if player not seen, make new empty hand
-                playerCards.put(revPlayer, new ClueHand(3)); // TODO make handsize work for actual value based on number of players
+                playerCards.put(revPlayer, new ClueHand(revPlayer.getMaxHandSize()));
             }
             // add card to revealing player since it is known
             if (info.hasCard()==true) { // add if card was actually shown
@@ -505,14 +480,13 @@ public class SolverTree {
         return playerCards;
     }
 
-    /*
+    /**
      * Removes the nodes passed in nodesSet from the tree by walking through tree.
      * Nodes set should only contain unknown nodes on multi child layers of the tree
      */
     private void removeNodes(Set<Node<ClueInfo>> nodesSet) {
-        // TODO complete me
         Node<ClueInfo> node = tree.getHead();
-        while (node!=null && node.hasChildren()) { // node can equal null if only child removed TODO check this
+        while (node!=null && node.hasChildren()) { // node can equal null if only child removed 
             for (int childIdx=0; childIdx<node.numChildren(); ++childIdx) { // check if any children are violating
                 Node<ClueInfo> child = node.getChildren()[childIdx];
                 if (nodesSet.contains(child)) {
@@ -525,7 +499,7 @@ public class SolverTree {
         }
     }
 
-    /*
+    /**
      * Performs prune() once on the tree, see docstring of prune for details.
      */
     private boolean pruneOnce() {
@@ -544,9 +518,9 @@ public class SolverTree {
         }
 
         // prune on conditions
-        for (Node<ClueInfo> node: nodes) { // TODO make prune only unknown nodes in the future
+        for (Node<ClueInfo> node: nodes) { 
             // filter out nodes that have value null, since they will not be removed. Skips known info
-            if (knownNodesInfo.contains(node.getValue()) || node.getValue()==null) { // TODO make iterate over known nodes instead?
+            if (knownNodesInfo.contains(node.getValue()) || node.getValue()==null) { 
                 continue;
             }
             ClueInfo cInfo = node.getValue();
@@ -558,7 +532,7 @@ public class SolverTree {
                     continue;
                 }
                 ClueInfoCardAndRevealingPlayer newPlayerInfoCopy = new ClueInfoCardAndRevealingPlayer(player, cInfo.card(), cInfo.hasCard);
-                if (revealingPlayerInfo.contains(newPlayerInfoCopy)) { // TODO doesn't work, checking if same player for obth
+                if (revealingPlayerInfo.contains(newPlayerInfoCopy)) {
                     cond1 = true;
                 }
             }
@@ -566,15 +540,15 @@ public class SolverTree {
             // cond 2
             ClueInfoCardAndRevealingPlayer newRevealingPlayerInfo = new ClueInfoCardAndRevealingPlayer(cInfo);
             newRevealingPlayerInfo.flipHasCard();
-            boolean cond2 = revealingPlayerInfo.contains(newRevealingPlayerInfo); // TODO doesn't work with different guessing players
+            boolean cond2 = revealingPlayerInfo.contains(newRevealingPlayerInfo); 
             
             // cond 3
             ClueHand revPlayerSeenCards = playerCards.get(cInfo.revealingPlayer());
             if (revPlayerSeenCards==null) { // if player for this node has no known node, say hand size is 0
-                revPlayerSeenCards = new ClueHand(3); // TODO replace with proper size
+                revPlayerSeenCards = new ClueHand(cInfo.revealingPlayer().getMaxHandSize());
             }
             boolean atMaxHandSize = revPlayerSeenCards.size()==revPlayerSeenCards.maxSize();
-            HashSet<ClueCard> seenCardsSet = new HashSet<>(Arrays.asList(revPlayerSeenCards.getCards())); // TODO this recomuptation is not very efficient
+            HashSet<ClueCard> seenCardsSet = new HashSet<>(Arrays.asList(revPlayerSeenCards.getCards()));
             // cannot have any unknown cards if at max hand size (all player cards are known)
             boolean cond3 = atMaxHandSize && !(seenCardsSet).contains(cInfo.card());
             if (cond1 | cond2 | cond3) { 
@@ -591,7 +565,7 @@ public class SolverTree {
         }
     }
     
-    /*
+    /**
      * Finds and removes nodes with ClueInfo that would disqualify
      * unknown nodes with contradictory ClueInfo if present in tree, based on 3 pruning conditions:
      *      1. An unknown node asserts the same card another player is known to have.
@@ -609,9 +583,10 @@ public class SolverTree {
         }
     }
 
-    /*
+    /**
      * Given an array of info gathered throughout the game, builds a tree of possibilities for each player.
      * Does not prune the output, so improper nodes (contradictions) may still remain.
+     * @param totalInfo array of information gathered throughout clue game
      */
     public void buildNoPrune(ClueInfo[] totalInfo) { 
         clear(); // clear to rebuild
@@ -621,8 +596,9 @@ public class SolverTree {
         }
     }
     
-    /*
+    /**
      * Given an array of info gathered throughout the game, builds a tree of possibilities for each player
+     * @param totalInfo array of information gathered throughout clue game
      */
     public void build(ClueInfo[] totalInfo) { 
         clear(); // clear to rebuild
@@ -633,26 +609,32 @@ public class SolverTree {
         prune();
     }
 
-     /*
+     /**
      * Given an array of info gathered throughout the game, builds a tree of possibilities for each player.
      * Also changes the final guesses that have been made by other players within the tree for getAnswer().
+     * @param totalInfo array of information gathered throughout clue game
+     * @param finalGuesses set of all final guesses that other players have made, that (since the solver is still running)
+     *                     are assumed to have failed.
      */
     public void build(ClueInfo[] totalInfo, Set<ClueGuess> finalGuesses) { 
         build(totalInfo);
         setFinalGuesses(finalGuesses);
     }
 
-    /*
+    /**
      * Sets the final guesses that have been played, which are used in edge case 
      * to get answer in getAnswer().
+     * @param finalGuesses set of all final guesses that other players have made, that (since the solver is still running)
+     *                     are assumed to have failed.
      */
     public void setFinalGuesses(Set<ClueGuess> finalGuesses) {
         this.finalGuesses = finalGuesses;
     }
 
-    /*
+    /**
      * Given an array of info gathered throughout the game, builds a tree of possibilities for each player.
      * Also does NOT prune tree.
+     * @param totalInfo array of information gathered throughout clue game
      */
     public void buildNoInitialization(ClueInfo[] totalInfo) { 
         clear(); // clear to rebuild

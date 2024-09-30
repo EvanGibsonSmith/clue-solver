@@ -34,8 +34,7 @@ public class ClueCard {
         this(value, defaultPeople, defaultRooms, defaultWeapons);
     }
 
-
-    // TODO if this gets too clunky an object of valid types people, rooms weapons could be made.
+    // NOTE if this gets too clunky an object of valid types people, rooms weapons could be made.
     public ClueCard(String value, String[] people, String[] rooms, String[] weapons) {
         setupValuesToType(people, rooms, weapons);
         if (!VALUES_TO_TYPE.keySet().contains(value)) {

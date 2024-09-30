@@ -64,10 +64,6 @@ public class ClueInfo {
         }
     }
 
-    /*
-     * Creates a copy of ClueInfo, but with a new card for the guess as parameter passed
-     * TODO add param
-     */
     public ClueInfo copyWithNewCard(ClueCard newCard) {
         return new ClueInfo(guessingPlayer, guess, revealingPlayer, newCard);
     }
