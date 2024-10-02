@@ -21,7 +21,6 @@ import data_structures.Node;
 import java.util.Set;
 import java.util.HashSet;
 
-// TODO prune now built into basic "build" method so needs to be removed from appropriate tests
 class SolverTreeTest {
     // NOTE: See prune for type 1 2 and 3 contradictions
 

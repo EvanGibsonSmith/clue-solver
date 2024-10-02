@@ -469,6 +469,7 @@ public class SolverTree {
         Map<CluePlayer, ClueHand> playerCards = new HashMap<>(); // known cards for each player
         for (ClueInfo info: knownInfoSet) {
             CluePlayer revPlayer = info.revealingPlayer();
+            if (revPlayer==null) {continue;} // if no revealing player, do not add to player cards
             if (!playerCards.containsKey(revPlayer)) { // if player not seen, make new empty hand
                 playerCards.put(revPlayer, new ClueHand(revPlayer.getMaxHandSize()));
             }

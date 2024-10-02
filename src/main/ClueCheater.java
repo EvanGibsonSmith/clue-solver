@@ -29,14 +29,14 @@ public class ClueCheater {
         System.out.println("Please enter the hand size of player this game");
         int playerHandSize = scnr.nextInt();
 
-        String[] people = {"scarlett", "mustard", "white", "green", "peacock", "plum"};
+        /*String[] people = {"scarlett", "mustard", "white", "green", "peacock", "plum"};
         String[] rooms = {"conservatory", "dining", "ballroom", "study", "hall", "lounge", "library", "billiard"};
-        String[] weapons = {"candlestick", "knife", "lead pipe", "pistol", "rope", "wrench"};
+        String[] weapons = {"candlestick", "knife", "lead_pipe", "pistol", "rope", "wrench"};*/
 
         // smaller set used for testing
-        /*String[] people = {"mustard", "peacock", "plum", "white", "scarlett"};
+        String[] people = {"mustard", "peacock", "plum", "white", "scarlett"};
         String[] rooms = {"hall", "study", "lounge", "ballroom"};
-        String[] weapons = {"knife", "lead_pipe", "pistol"}; */
+        String[] weapons = {"knife", "lead_pipe", "pistol"}; 
         
         System.out.println("Please input player names (you will be the first player entered)");
         String[] playerNames = new String[numPlayers];
