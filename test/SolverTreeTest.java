@@ -254,7 +254,6 @@ class SolverTreeTest {
         // player 1 and player 2 both don't have rope, so we know that it must be rope
         // NOTE: Peacock that is not used for answer, but is here so that it doesn't mess with other method by revealing 
         // by getting plum by process of elimintation since the players wouldn't have green.
-        // TODO fix this
         
         // below indicates this THIS player doesn't have these cards. In a real game, tree is 
         // initialized to have the cards that this player does and doesn't have (all the known info of given player)
@@ -312,9 +311,9 @@ class SolverTreeTest {
      * Test of full sized game where nobody has the first guess Scarlett, Ballroom, Pistol
      */
     void bigGameNobodyHasFirstGuessWithInitialization() {
-        CluePlayer[] players = new CluePlayer[3]; // TODO make other tests like this instead of using game since game deals cards
+        CluePlayer[] players = new CluePlayer[3]; 
         for (int i=0; i<players.length; ++i) {
-            players[i] = new CluePlayer("Player " + i, 3); // TODO don't set hand size like this, array
+            players[i] = new CluePlayer("Player " + i, 3); 
         }
         // add cards for each players
         players[0].getHand().addCard(new ClueCard("mustard"));
@@ -363,9 +362,9 @@ class SolverTreeTest {
      */
     // NOTE: Somehow the method name smallGameProcessOfElimination causes an error which is complete black magic to me
     void smallGameAllCardsShownToPlayer() {
-        CluePlayer[] players = new CluePlayer[3]; // TODO make other tests like this instead of using game since game deals cards
+        CluePlayer[] players = new CluePlayer[3]; 
         for (int i=0; i<players.length; ++i) {
-            players[i] = new CluePlayer("Player " + i, 3); // TODO don't set hand size like this, array
+            players[i] = new CluePlayer("Player " + i, 3); 
         }
 
         // add cards for each players
@@ -438,9 +437,9 @@ class SolverTreeTest {
      */
     // NOTE: Somehow the method name smallGameProcessOfElimination causes an error which is complete black magic to me
     void smallGameCenterCardsRevealAnswer() {
-        CluePlayer[] players = new CluePlayer[2]; // TODO make other tests like this instead of using game since game deals cards
+        CluePlayer[] players = new CluePlayer[2]; 
         for (int i=0; i<players.length; ++i) {
-            players[i] = new CluePlayer("Player " + i, 3); // TODO don't set hand size like this, array
+            players[i] = new CluePlayer("Player " + i, 3);
         }
         ClueCard[] centerCards = {new ClueCard("white"), new ClueCard("study"), new ClueCard("lounge")};
 
@@ -495,9 +494,9 @@ class SolverTreeTest {
      * ballroom and pistol are in the center
      */
     void smallGameCenterCardsDeducePlayerHand() {
-        CluePlayer[] players = new CluePlayer[2]; // TODO make other tests like this instead of using game since game deals cards
+        CluePlayer[] players = new CluePlayer[2]; 
         for (int i=0; i<players.length; ++i) {
-            players[i] = new CluePlayer("Player " + i, 3); // TODO don't set hand size like this, array
+            players[i] = new CluePlayer("Player " + i, 3); 
         }
         ClueCard[] centerCards = {new ClueCard("white"), new ClueCard("study"), new ClueCard("lounge")};
 
@@ -558,13 +557,12 @@ class SolverTreeTest {
      * After this first guess, plum is revealed, allowing that
      */
     void smallGameCenterCardsComplexDeduction() {
-        CluePlayer[] players = new CluePlayer[3]; // TODO make other tests like this instead of using game since game deals cards
+        CluePlayer[] players = new CluePlayer[3];
         for (int i=0; i<players.length; ++i) {
-            players[i] = new CluePlayer("Player " + i, 3); // TODO don't set hand size like this, array
+            players[i] = new CluePlayer("Player " + i, 3);
         }
         ClueCard[] centerCards = {new ClueCard("white"), new ClueCard("study"), new ClueCard("lounge")};
 
-        // TODO figure out why the cards in player 1s hand matter to get an answer?
         players[0].getHand().addCard(new ClueCard("mustard"));
         players[0].getHand().addCard(new ClueCard("peacock"));
         players[0].getHand().addCard(new ClueCard("hall"));
@@ -623,13 +621,13 @@ class SolverTreeTest {
      * Final guess provides the last bit of information needed to get an ansewr
      */
     void finalGuessFailureDeduction() {
-        CluePlayer[] players = new CluePlayer[3]; // TODO make other tests like this instead of using game since game deals cards
+        CluePlayer[] players = new CluePlayer[3]; 
         for (int i=0; i<players.length; ++i) {
-            players[i] = new CluePlayer("Player " + i, 3); // TODO don't set hand size like this, array
+            players[i] = new CluePlayer("Player " + i, 3); 
         }
         ClueCard[] centerCards = {new ClueCard("white"), new ClueCard("study"), new ClueCard("lounge")};
 
-        // TODO figure out why the cards in player 1s hand matter to get an answer?
+
         players[0].getHand().addCard(new ClueCard("mustard"));
         players[0].getHand().addCard(new ClueCard("peacock"));
         players[0].getHand().addCard(new ClueCard("hall"));
